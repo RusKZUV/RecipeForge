@@ -27,3 +27,9 @@ Check these scenarios on the live running app after each phase or bugfix:
 
 ## Bug-derived test cases
 <!-- QA appends regression test cases here -->
+- **Empty Pantry Matches**: Verify that a user with an empty pantry receives matches sorted cleanly by lower missing cost, with coverage=0.0 and urgency=0.0, avoiding division by zero.
+- **Midnight Boundary in Almaty**: Expiry calculation at 23:59:59 (expires_today) vs 00:00:01 (expired) based on Asia/Almaty time (UTC+5).
+- **Multi-Tenant Protection**: Verify cross-user item modifications return 403 Forbidden or 404 Not Found, and deletion of account invalidates all user-associated access tokens immediately.
+- **Seed Recipe Mutability Guard**: Verify that modifying or deleting seeded recipes returns 403 Forbidden.
+- **Atomic Pantry Deductions**: Verify that cook completions deduct recipe ingredients down to zero without negative pantry balances.
+
