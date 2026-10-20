@@ -32,4 +32,5 @@ Check these scenarios on the live running app after each phase or bugfix:
 - **Multi-Tenant Protection**: Verify cross-user item modifications return 403 Forbidden or 404 Not Found, and deletion of account invalidates all user-associated access tokens immediately.
 - **Seed Recipe Mutability Guard**: Verify that modifying or deleting seeded recipes returns 403 Forbidden.
 - **Atomic Pantry Deductions**: Verify that cook completions deduct recipe ingredients down to zero without negative pantry balances.
+- **Quick Item Search Add Responsiveness (#32)**: Verify that clicking "Add item" or submitting via Enter with a valid ingredient dispatches `pantry.addItem`, increments the pantry item count and updates the inventory card without a page reload, and clears the input field. Verify that empty or whitespace input triggers validation feedback without service calls, Cancel resets input and errors, in-flight requests disable the button, and service rejections preserve the input value and display visible error messages.
 

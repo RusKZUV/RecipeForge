@@ -235,4 +235,64 @@ describe('App & Quick Item Search Integration (#32)', () => {
       unit: 'pcs',
     });
   });
+
+  it('submitting form via enter key dispatches pantry.addItem and adds custom item to inventory list', async () => {
+    const api = getApiService();
+    const addItemSpy = vi.spyOn(api.pantry, 'addItem');
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('demo-badge')).toBeInTheDocument();
+    });
+
+    const input = screen.getByLabelText(/quick item search/i);
+    fireEvent.change(input, { target: { value: 'starfruit' } });
+
+    // Submit via form
+    const form = input.closest('form')!;
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(addItemSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          ingredient_id: null,
+          custom_name: 'starfruit',
+          quantity: 1,
+          unit: 'pcs',
+        })
+      );
+    });
+
+    // Input cleared
+    expect(input).toHaveValue('');
+
+    // Item rendered in pantry inventory list
+    await waitFor(() => {
+      expect(screen.getByText('starfruit')).toBeInTheDocument();
+    });
+  });
+
+  it('typing in input clears active validation error', async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('demo-badge')).toBeInTheDocument();
+    });
+
+    const input = screen.getByLabelText(/quick item search/i);
+    const addButton = screen.getByRole('button', { name: /^add item$/i });
+
+    // Trigger validation error
+    fireEvent.click(addButton);
+    expect(screen.getByRole('alert')).toHaveTextContent(/please enter an ingredient name/i);
+
+    // Type character into input
+    fireEvent.change(input, { target: { value: 'a' } });
+
+    // Error should immediately disappear
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
 });
+
