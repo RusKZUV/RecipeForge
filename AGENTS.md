@@ -27,6 +27,6 @@ Product plan: `docs/plan.md`. Read `docs/process.md` before starting any task.
 - `docs/task-template.md` - issue template
 - `docs/team/pm.md`, `docs/team/software-engineer.md`, `docs/team/qa-engineer.md` - role definitions
 - `docs/testing-guidelines.md` - testing strategy and checklist (read before writing tests)
-- `docs/design-system.md` - design tokens and rules (read before UI work)
+- `docs/design-system.md` - read before any UI work; visual references in docs/design-references/
 - `openapi.yaml` - API contract (keep in sync with backend)
 - `brainstorm.md` - original brainstorming chat (do not edit)
