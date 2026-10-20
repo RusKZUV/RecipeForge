@@ -1,0 +1,1634 @@
+openapi: 3.1.0
+info:
+  title: RecipeForge API
+  description: Web app that helps budget-conscious students cook affordable meals
+    from ingredients they already have.
+  version: 0.1.0
+paths:
+  /auth/register:
+    post:
+      tags:
+      - auth
+      summary: Register
+      operationId: register_auth_register_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /auth/login:
+    post:
+      tags:
+      - auth
+      summary: Login
+      operationId: login_auth_login_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /auth/demo-login:
+    post:
+      tags:
+      - auth
+      summary: Demo Login
+      operationId: demo_login_auth_demo_login_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+  /auth/logout:
+    post:
+      tags:
+      - auth
+      summary: Logout
+      operationId: logout_auth_logout_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          type: string
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /auth/me:
+    get:
+      tags:
+      - auth
+      summary: Get Me
+      operationId: get_me_auth_me_get
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /auth/profile:
+    patch:
+      tags:
+      - auth
+      summary: Update Profile
+      operationId: update_profile_auth_profile_patch
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdateRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /auth/account:
+    delete:
+      tags:
+      - auth
+      summary: Delete Account
+      operationId: delete_account_auth_account_delete
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /pantry:
+    get:
+      tags:
+      - pantry
+      summary: List Pantry Items
+      operationId: list_pantry_items_pantry_get
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PantryItemResponse'
+                title: Response List Pantry Items Pantry Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - pantry
+      summary: Add Pantry Item
+      operationId: add_pantry_item_pantry_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PantryItemCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PantryItemResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /pantry/{item_id}:
+    patch:
+      tags:
+      - pantry
+      summary: Update Pantry Item
+      operationId: update_pantry_item_pantry__item_id__patch
+      parameters:
+      - name: item_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Item Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PantryItemUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PantryItemResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - pantry
+      summary: Delete Pantry Item
+      operationId: delete_pantry_item_pantry__item_id__delete
+      parameters:
+      - name: item_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Item Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /recipes:
+    get:
+      tags:
+      - recipes
+      summary: List Recipes
+      operationId: list_recipes_recipes_get
+      parameters:
+      - name: query
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Query
+      - name: sort_by
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sort By
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 12
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeListResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - recipes
+      summary: Create Recipe
+      operationId: create_recipe_recipes_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /recipes/{recipe_id}:
+    get:
+      tags:
+      - recipes
+      summary: Get Recipe
+      operationId: get_recipe_recipes__recipe_id__get
+      parameters:
+      - name: recipe_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Recipe Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    patch:
+      tags:
+      - recipes
+      summary: Update Recipe
+      operationId: update_recipe_recipes__recipe_id__patch
+      parameters:
+      - name: recipe_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Recipe Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - recipes
+      summary: Delete Recipe
+      operationId: delete_recipe_recipes__recipe_id__delete
+      parameters:
+      - name: recipe_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Recipe Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /shopping:
+    get:
+      tags:
+      - shopping
+      summary: List Shopping Items
+      operationId: list_shopping_items_shopping_get
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShoppingItemResponse'
+                title: Response List Shopping Items Shopping Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - shopping
+      summary: Add Shopping Item
+      operationId: add_shopping_item_shopping_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShoppingItemCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingItemResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /shopping/{item_id}:
+    patch:
+      tags:
+      - shopping
+      summary: Update Shopping Item
+      operationId: update_shopping_item_shopping__item_id__patch
+      parameters:
+      - name: item_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Item Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShoppingItemUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingItemResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - shopping
+      summary: Delete Shopping Item
+      operationId: delete_shopping_item_shopping__item_id__delete
+      parameters:
+      - name: item_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Item Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /shopping/{item_id}/bought:
+    post:
+      tags:
+      - shopping
+      summary: Mark Item Bought
+      operationId: mark_item_bought_shopping__item_id__bought_post
+      parameters:
+      - name: item_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Item Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              anyOf:
+              - $ref: '#/components/schemas/MarkBoughtRequest'
+              - type: 'null'
+              title: Req
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /catalog/ingredients:
+    get:
+      tags:
+      - catalog
+      summary: Get Catalog Ingredients
+      operationId: get_catalog_ingredients_catalog_ingredients_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/IngredientResponse'
+                type: array
+                title: Response Get Catalog Ingredients Catalog Ingredients Get
+  /catalog/substitutions:
+    get:
+      tags:
+      - catalog
+      summary: Get Substitution Rules
+      operationId: get_substitution_rules_catalog_substitutions_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SubstitutionRuleResponse'
+                type: array
+                title: Response Get Substitution Rules Catalog Substitutions Get
+  /matches:
+    get:
+      tags:
+      - matching
+      summary: Get Recipe Matches
+      operationId: get_recipe_matches_matches_get
+      parameters:
+      - name: sort_by
+        in: query
+        required: false
+        schema:
+          type: string
+          default: balanced
+          title: Sort By
+      - name: min_coverage
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Min Coverage
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 12
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /cook/complete:
+    post:
+      tags:
+      - cook
+      summary: Complete Cook Session
+      operationId: complete_cook_session_cook_complete_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CookCompleteRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /health:
+    get:
+      tags:
+      - system
+      summary: Health Check
+      operationId: health_check_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /:
+    get:
+      tags:
+      - system
+      summary: Root
+      operationId: root__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+components:
+  schemas:
+    AuthResponse:
+      properties:
+        user:
+          $ref: '#/components/schemas/UserResponse'
+        token:
+          $ref: '#/components/schemas/AuthToken'
+      type: object
+      required:
+      - user
+      - token
+      title: AuthResponse
+    AuthToken:
+      properties:
+        access_token:
+          type: string
+          title: Access Token
+        token_type:
+          type: string
+          title: Token Type
+          default: bearer
+        expires_at:
+          type: integer
+          title: Expires At
+      type: object
+      required:
+      - access_token
+      - expires_at
+      title: AuthToken
+    CookCompleteRequest:
+      properties:
+        recipe_id:
+          type: string
+          title: Recipe Id
+        servings:
+          type: integer
+          title: Servings
+          default: 1
+        deductions:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/DeductionItem'
+            type: array
+          - type: 'null'
+          title: Deductions
+      type: object
+      required:
+      - recipe_id
+      title: CookCompleteRequest
+    DeductionItem:
+      properties:
+        ingredient_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ingredient Id
+        custom_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Custom Name
+        deduct_quantity:
+          type: number
+          title: Deduct Quantity
+        unit:
+          type: string
+          title: Unit
+      type: object
+      required:
+      - deduct_quantity
+      - unit
+      title: DeductionItem
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    IngredientResponse:
+      properties:
+        id:
+          type: string
+          title: Id
+        canonical_name:
+          type: string
+          title: Canonical Name
+        category:
+          type: string
+          title: Category
+        base_unit:
+          type: string
+          title: Base Unit
+        price_per_base_unit:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Price Per Base Unit
+        assumed_staple:
+          type: boolean
+          title: Assumed Staple
+          default: false
+        flags:
+          additionalProperties:
+            type: boolean
+          type: object
+          title: Flags
+        unit_approximations:
+          additionalProperties:
+            type: number
+          type: object
+          title: Unit Approximations
+        variant_of:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Variant Of
+      type: object
+      required:
+      - id
+      - canonical_name
+      - category
+      - base_unit
+      title: IngredientResponse
+    LoginRequest:
+      properties:
+        email:
+          type: string
+          title: Email
+        password:
+          type: string
+          title: Password
+      type: object
+      required:
+      - email
+      - password
+      title: LoginRequest
+    MarkBoughtRequest:
+      properties:
+        ingredient_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ingredient Id
+        custom_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Custom Name
+        quantity:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Quantity
+        unit:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unit
+        expires_on:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Expires On
+      type: object
+      title: MarkBoughtRequest
+    PantryItemCreate:
+      properties:
+        ingredient_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ingredient Id
+        custom_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Custom Name
+        quantity:
+          type: number
+          title: Quantity
+        unit:
+          type: string
+          title: Unit
+        expires_on:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Expires On
+      type: object
+      required:
+      - quantity
+      - unit
+      title: PantryItemCreate
+    PantryItemResponse:
+      properties:
+        id:
+          type: string
+          title: Id
+        user_id:
+          type: string
+          title: User Id
+        ingredient_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ingredient Id
+        custom_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Custom Name
+        quantity:
+          type: number
+          title: Quantity
+        unit:
+          type: string
+          title: Unit
+        expires_on:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Expires On
+        created_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Created At
+        updated_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Updated At
+        expiry_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Expiry Status
+      type: object
+      required:
+      - id
+      - user_id
+      - quantity
+      - unit
+      title: PantryItemResponse
+    PantryItemUpdate:
+      properties:
+        ingredient_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ingredient Id
+        custom_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Custom Name
+        quantity:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Quantity
+        unit:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unit
+        expires_on:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Expires On
+      type: object
+      title: PantryItemUpdate
+    ProfileUpdateRequest:
+      properties:
+        dietary_filters:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Dietary Filters
+        equipment:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Equipment
+        default_servings:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Default Servings
+        assumed_staples:
+          anyOf:
+          - additionalProperties:
+              type: boolean
+            type: object
+          - type: 'null'
+          title: Assumed Staples
+      type: object
+      title: ProfileUpdateRequest
+    RecipeCreate:
+      properties:
+        title:
+          type: string
+          title: Title
+        servings:
+          type: integer
+          title: Servings
+          default: 1
+        time_minutes:
+          type: integer
+          title: Time Minutes
+          default: 20
+        equipment:
+          items:
+            type: string
+          type: array
+          title: Equipment
+        ingredients:
+          items:
+            $ref: '#/components/schemas/RecipeIngredientSchema'
+          type: array
+          title: Ingredients
+        steps:
+          items:
+            $ref: '#/components/schemas/RecipeStepSchema'
+          type: array
+          title: Steps
+        source:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source
+        license_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: License Note
+      type: object
+      required:
+      - title
+      title: RecipeCreate
+    RecipeIngredientSchema:
+      properties:
+        id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Id
+        ingredient_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ingredient Id
+        custom_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Custom Name
+        quantity:
+          type: number
+          title: Quantity
+        unit:
+          type: string
+          title: Unit
+        optional:
+          type: boolean
+          title: Optional
+          default: false
+      type: object
+      required:
+      - quantity
+      - unit
+      title: RecipeIngredientSchema
+    RecipeListResponse:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/RecipeResponse'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        limit:
+          type: integer
+          title: Limit
+        offset:
+          type: integer
+          title: Offset
+      type: object
+      required:
+      - items
+      - total
+      - limit
+      - offset
+      title: RecipeListResponse
+    RecipeResponse:
+      properties:
+        id:
+          type: string
+          title: Id
+        owner_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Id
+        title:
+          type: string
+          title: Title
+        servings:
+          type: integer
+          title: Servings
+        time_minutes:
+          type: integer
+          title: Time Minutes
+        equipment:
+          items:
+            type: string
+          type: array
+          title: Equipment
+        is_seed:
+          type: boolean
+          title: Is Seed
+        source:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source
+        license_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: License Note
+        ingredients:
+          items:
+            $ref: '#/components/schemas/RecipeIngredientSchema'
+          type: array
+          title: Ingredients
+        steps:
+          items:
+            $ref: '#/components/schemas/RecipeStepSchema'
+          type: array
+          title: Steps
+      type: object
+      required:
+      - id
+      - title
+      - servings
+      - time_minutes
+      - equipment
+      - is_seed
+      - ingredients
+      - steps
+      title: RecipeResponse
+    RecipeStepSchema:
+      properties:
+        id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Id
+        position:
+          type: integer
+          title: Position
+        text:
+          type: string
+          title: Text
+        timer_seconds:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Timer Seconds
+      type: object
+      required:
+      - position
+      - text
+      title: RecipeStepSchema
+    RecipeUpdate:
+      properties:
+        title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Title
+        servings:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Servings
+        time_minutes:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Time Minutes
+        equipment:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Equipment
+        ingredients:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/RecipeIngredientSchema'
+            type: array
+          - type: 'null'
+          title: Ingredients
+        steps:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/RecipeStepSchema'
+            type: array
+          - type: 'null'
+          title: Steps
+        source:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source
+        license_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: License Note
+      type: object
+      title: RecipeUpdate
+    RegisterRequest:
+      properties:
+        email:
+          type: string
+          title: Email
+        password:
+          type: string
+          title: Password
+        default_servings:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Default Servings
+          default: 1
+      type: object
+      required:
+      - email
+      - password
+      title: RegisterRequest
+    ShoppingItemCreate:
+      properties:
+        ingredient_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ingredient Id
+        custom_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Custom Name
+        quantity:
+          type: number
+          title: Quantity
+        unit:
+          type: string
+          title: Unit
+        source_recipes:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Source Recipes
+        servings:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Servings
+          default: 1
+        estimated_price_kzt:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Estimated Price Kzt
+      type: object
+      required:
+      - quantity
+      - unit
+      title: ShoppingItemCreate
+    ShoppingItemResponse:
+      properties:
+        id:
+          type: string
+          title: Id
+        user_id:
+          type: string
+          title: User Id
+        ingredient_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ingredient Id
+        custom_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Custom Name
+        quantity:
+          type: number
+          title: Quantity
+        unit:
+          type: string
+          title: Unit
+        source_recipes:
+          items:
+            type: string
+          type: array
+          title: Source Recipes
+        servings:
+          type: integer
+          title: Servings
+          default: 1
+        checked:
+          type: boolean
+          title: Checked
+          default: false
+        estimated_price_kzt:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Estimated Price Kzt
+      type: object
+      required:
+      - id
+      - user_id
+      - quantity
+      - unit
+      title: ShoppingItemResponse
+    ShoppingItemUpdate:
+      properties:
+        ingredient_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ingredient Id
+        custom_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Custom Name
+        quantity:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Quantity
+        unit:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unit
+        source_recipes:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Source Recipes
+        servings:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Servings
+        checked:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Checked
+        estimated_price_kzt:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Estimated Price Kzt
+      type: object
+      title: ShoppingItemUpdate
+    SubstitutionRuleResponse:
+      properties:
+        id:
+          type: string
+          title: Id
+        from_ingredient:
+          type: string
+          title: From Ingredient
+        to_ingredient:
+          type: string
+          title: To Ingredient
+        ratio:
+          type: number
+          title: Ratio
+        quality:
+          type: number
+          title: Quality
+        note:
+          type: string
+          title: Note
+        context:
+          type: string
+          title: Context
+          default: any
+        tags:
+          items:
+            type: string
+          type: array
+          title: Tags
+      type: object
+      required:
+      - id
+      - from_ingredient
+      - to_ingredient
+      - ratio
+      - quality
+      - note
+      title: SubstitutionRuleResponse
+    UserResponse:
+      properties:
+        id:
+          type: string
+          title: Id
+        email:
+          type: string
+          title: Email
+        default_servings:
+          type: integer
+          title: Default Servings
+          default: 1
+        dietary_filters:
+          items:
+            type: string
+          type: array
+          title: Dietary Filters
+        equipment:
+          items:
+            type: string
+          type: array
+          title: Equipment
+        assumed_staples:
+          additionalProperties:
+            type: boolean
+          type: object
+          title: Assumed Staples
+        created_at:
+          type: string
+          title: Created At
+      type: object
+      required:
+      - id
+      - email
+      - created_at
+      title: UserResponse
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError

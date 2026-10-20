@@ -3,7 +3,7 @@
  * Aligned with docs/plan.md Section 5 and 6.1
  */
 
-import { User, PantryItem, Recipe, Ingredient } from '../types';
+import { User, PantryItem, Recipe, Ingredient, IngredientAlias, SubstitutionRule } from '../types';
 
 export const DEMO_USER_ID = 'user-demo-1';
 export const DEMO_USER_EMAIL = 'demo@recipeforge.local';
@@ -105,13 +105,34 @@ export const INITIAL_DEMO_PANTRY: PantryItem[] = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Ingredient Catalog — 15+ items with Russian aliases
+// ---------------------------------------------------------------------------
+
 export const INITIAL_INGREDIENTS: Ingredient[] = [
+  {
+    id: 'ing-flour',
+    canonical_name: 'flour',
+    category: 'bakery',
+    base_unit: 'kg',
+    price_per_base_unit: 350,
+    assumed_staple: false,
+    flags: {
+      contains_meat: false,
+      contains_animal_product: false,
+      contains_gluten: true,
+      contains_dairy: false,
+      contains_nuts: false,
+    },
+    unit_approximations: { cup: 130 },
+    variant_of: null,
+  },
   {
     id: 'ing-eggs',
     canonical_name: 'eggs',
     category: 'dairy_and_eggs',
     base_unit: 'pcs',
-    price_per_base_unit: 65, // ~65 KZT per egg
+    price_per_base_unit: 65,
     assumed_staple: false,
     flags: {
       contains_meat: false,
@@ -124,11 +145,130 @@ export const INITIAL_INGREDIENTS: Ingredient[] = [
     variant_of: null,
   },
   {
+    id: 'ing-milk',
+    canonical_name: 'milk',
+    category: 'dairy_and_eggs',
+    base_unit: 'l',
+    price_per_base_unit: 320,
+    assumed_staple: false,
+    flags: {
+      contains_meat: false,
+      contains_animal_product: true,
+      contains_gluten: false,
+      contains_dairy: true,
+      contains_nuts: false,
+    },
+    unit_approximations: { cup: 240 },
+    variant_of: null,
+  },
+  {
+    id: 'ing-butter',
+    canonical_name: 'butter',
+    category: 'dairy_and_eggs',
+    base_unit: 'kg',
+    price_per_base_unit: 2800,
+    assumed_staple: false,
+    flags: {
+      contains_meat: false,
+      contains_animal_product: true,
+      contains_gluten: false,
+      contains_dairy: true,
+      contains_nuts: false,
+    },
+    unit_approximations: { tbsp: 14 },
+    variant_of: null,
+  },
+  {
+    id: 'ing-tomato',
+    canonical_name: 'tomato',
+    category: 'produce',
+    base_unit: 'kg',
+    price_per_base_unit: 600,
+    assumed_staple: false,
+    flags: {
+      contains_meat: false,
+      contains_animal_product: false,
+      contains_gluten: false,
+      contains_dairy: false,
+      contains_nuts: false,
+    },
+    unit_approximations: { pcs: 120 },
+    variant_of: null,
+  },
+  {
+    id: 'ing-cherry-tomato',
+    canonical_name: 'cherry tomato',
+    category: 'produce',
+    base_unit: 'kg',
+    price_per_base_unit: 900,
+    assumed_staple: false,
+    flags: {
+      contains_meat: false,
+      contains_animal_product: false,
+      contains_gluten: false,
+      contains_dairy: false,
+      contains_nuts: false,
+    },
+    unit_approximations: { pcs: 15 },
+    variant_of: 'ing-tomato',
+  },
+  {
+    id: 'ing-onion',
+    canonical_name: 'onion',
+    category: 'produce',
+    base_unit: 'kg',
+    price_per_base_unit: 180,
+    assumed_staple: false,
+    flags: {
+      contains_meat: false,
+      contains_animal_product: false,
+      contains_gluten: false,
+      contains_dairy: false,
+      contains_nuts: false,
+    },
+    unit_approximations: { pcs: 120 },
+    variant_of: null,
+  },
+  {
+    id: 'ing-garlic',
+    canonical_name: 'garlic',
+    category: 'produce',
+    base_unit: 'kg',
+    price_per_base_unit: 1200,
+    assumed_staple: false,
+    flags: {
+      contains_meat: false,
+      contains_animal_product: false,
+      contains_gluten: false,
+      contains_dairy: false,
+      contains_nuts: false,
+    },
+    unit_approximations: { pcs: 5 },
+    variant_of: null,
+  },
+  {
+    id: 'ing-potato',
+    canonical_name: 'potato',
+    category: 'produce',
+    base_unit: 'kg',
+    price_per_base_unit: 220,
+    assumed_staple: false,
+    flags: {
+      contains_meat: false,
+      contains_animal_product: false,
+      contains_gluten: false,
+      contains_dairy: false,
+      contains_nuts: false,
+    },
+    unit_approximations: { pcs: 150 },
+    variant_of: null,
+  },
+  {
     id: 'ing-rice',
-    canonical_name: 'white rice',
+    canonical_name: 'rice',
     category: 'grains',
     base_unit: 'kg',
-    price_per_base_unit: 450, // 450 KZT / kg
+    price_per_base_unit: 450,
     assumed_staple: false,
     flags: {
       contains_meat: false,
@@ -141,11 +281,45 @@ export const INITIAL_INGREDIENTS: Ingredient[] = [
     variant_of: null,
   },
   {
-    id: 'ing-onion',
-    canonical_name: 'onion',
-    category: 'produce',
+    id: 'ing-chicken',
+    canonical_name: 'chicken',
+    category: 'meat',
     base_unit: 'kg',
-    price_per_base_unit: 180, // 180 KZT / kg
+    price_per_base_unit: 1500,
+    assumed_staple: false,
+    flags: {
+      contains_meat: true,
+      contains_animal_product: true,
+      contains_gluten: false,
+      contains_dairy: false,
+      contains_nuts: false,
+    },
+    unit_approximations: {},
+    variant_of: null,
+  },
+  {
+    id: 'ing-salt',
+    canonical_name: 'salt',
+    category: 'spices',
+    base_unit: 'kg',
+    price_per_base_unit: 120,
+    assumed_staple: true,
+    flags: {
+      contains_meat: false,
+      contains_animal_product: false,
+      contains_gluten: false,
+      contains_dairy: false,
+      contains_nuts: false,
+    },
+    unit_approximations: { tsp: 6 },
+    variant_of: null,
+  },
+  {
+    id: 'ing-sugar',
+    canonical_name: 'sugar',
+    category: 'bakery',
+    base_unit: 'kg',
+    price_per_base_unit: 550,
     assumed_staple: false,
     flags: {
       contains_meat: false,
@@ -154,11 +328,204 @@ export const INITIAL_INGREDIENTS: Ingredient[] = [
       contains_dairy: false,
       contains_nuts: false,
     },
-    unit_approximations: { pcs: 120 },
+    unit_approximations: { tsp: 4, tbsp: 12 },
+    variant_of: null,
+  },
+  {
+    id: 'ing-oil',
+    canonical_name: 'vegetable oil',
+    category: 'pantry',
+    base_unit: 'l',
+    price_per_base_unit: 800,
+    assumed_staple: true,
+    flags: {
+      contains_meat: false,
+      contains_animal_product: false,
+      contains_gluten: false,
+      contains_dairy: false,
+      contains_nuts: false,
+    },
+    unit_approximations: { tbsp: 15 },
+    variant_of: null,
+  },
+  {
+    id: 'ing-carrot',
+    canonical_name: 'carrot',
+    category: 'produce',
+    base_unit: 'kg',
+    price_per_base_unit: 250,
+    assumed_staple: false,
+    flags: {
+      contains_meat: false,
+      contains_animal_product: false,
+      contains_gluten: false,
+      contains_dairy: false,
+      contains_nuts: false,
+    },
+    unit_approximations: { pcs: 100 },
+    variant_of: null,
+  },
+  {
+    id: 'ing-pasta',
+    canonical_name: 'pasta',
+    category: 'grains',
+    base_unit: 'kg',
+    price_per_base_unit: 400,
+    assumed_staple: false,
+    flags: {
+      contains_meat: false,
+      contains_animal_product: false,
+      contains_gluten: true,
+      contains_dairy: false,
+      contains_nuts: false,
+    },
+    unit_approximations: {},
+    variant_of: null,
+  },
+  {
+    id: 'ing-water',
+    canonical_name: 'water',
+    category: 'pantry',
+    base_unit: 'l',
+    price_per_base_unit: 0,
+    assumed_staple: true,
+    flags: {
+      contains_meat: false,
+      contains_animal_product: false,
+      contains_gluten: false,
+      contains_dairy: false,
+      contains_nuts: false,
+    },
+    unit_approximations: { cup: 240 },
     variant_of: null,
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Russian & English Aliases for catalog ingredients
+// ---------------------------------------------------------------------------
+export const INGREDIENT_ALIASES: IngredientAlias[] = [
+  // flour / мука
+  { ingredient_id: 'ing-flour', alias: 'мука' },
+  { ingredient_id: 'ing-flour', alias: 'мука пшеничная' },
+  // eggs / яйца
+  { ingredient_id: 'ing-eggs', alias: 'яйца' },
+  { ingredient_id: 'ing-eggs', alias: 'яйцо' },
+  { ingredient_id: 'ing-eggs', alias: 'egg' },
+  // milk / молоко
+  { ingredient_id: 'ing-milk', alias: 'молоко' },
+  // butter / масло сливочное
+  { ingredient_id: 'ing-butter', alias: 'масло' },
+  { ingredient_id: 'ing-butter', alias: 'масло сливочное' },
+  // tomatoes / помидоры
+  { ingredient_id: 'ing-tomato', alias: 'помидоры' },
+  { ingredient_id: 'ing-tomato', alias: 'помидор' },
+  { ingredient_id: 'ing-tomato', alias: 'томат' },
+  // cherry tomato
+  { ingredient_id: 'ing-cherry-tomato', alias: 'черри' },
+  { ingredient_id: 'ing-cherry-tomato', alias: 'черри томат' },
+  // onion / лук
+  { ingredient_id: 'ing-onion', alias: 'лук' },
+  { ingredient_id: 'ing-onion', alias: 'лук репчатый' },
+  // garlic / чеснок
+  { ingredient_id: 'ing-garlic', alias: 'чеснок' },
+  // potato / картофель
+  { ingredient_id: 'ing-potato', alias: 'картофель' },
+  { ingredient_id: 'ing-potato', alias: 'картошка' },
+  // rice / рис
+  { ingredient_id: 'ing-rice', alias: 'рис' },
+  { ingredient_id: 'ing-rice', alias: 'белый рис' },
+  // chicken / курица
+  { ingredient_id: 'ing-chicken', alias: 'курица' },
+  { ingredient_id: 'ing-chicken', alias: 'куриное мясо' },
+  // salt / соль
+  { ingredient_id: 'ing-salt', alias: 'соль' },
+  // sugar / сахар
+  { ingredient_id: 'ing-sugar', alias: 'сахар' },
+  // vegetable oil / масло растительное
+  { ingredient_id: 'ing-oil', alias: 'масло растительное' },
+  { ingredient_id: 'ing-oil', alias: 'подсолнечное масло' },
+  { ingredient_id: 'ing-oil', alias: 'растительное масло' },
+  // carrot / морковь
+  { ingredient_id: 'ing-carrot', alias: 'морковь' },
+  { ingredient_id: 'ing-carrot', alias: 'морковка' },
+  // pasta / паста
+  { ingredient_id: 'ing-pasta', alias: 'паста' },
+  { ingredient_id: 'ing-pasta', alias: 'макароны' },
+  { ingredient_id: 'ing-pasta', alias: 'спагетти' },
+  // water / вода
+  { ingredient_id: 'ing-water', alias: 'вода' },
+];
+
+// ---------------------------------------------------------------------------
+// Substitution Rules (5+)
+// ---------------------------------------------------------------------------
+export const SUBSTITUTION_RULES: SubstitutionRule[] = [
+  {
+    id: 'sub-milk-to-water',
+    from_ingredient: 'ing-milk',
+    to_ingredient: 'ing-water',
+    ratio: 1.0,
+    quality: 0.4,
+    note: 'Water can replace milk in cooking (less rich)',
+    context: 'any',
+    tags: ['dairy-free'],
+  },
+  {
+    id: 'sub-butter-to-oil',
+    from_ingredient: 'ing-butter',
+    to_ingredient: 'ing-oil',
+    ratio: 0.8,
+    quality: 0.75,
+    note: 'Use 0.8x vegetable oil instead of butter',
+    context: 'any',
+    tags: ['dairy-free'],
+  },
+  {
+    id: 'sub-pasta-to-rice',
+    from_ingredient: 'ing-pasta',
+    to_ingredient: 'ing-rice',
+    ratio: 1.0,
+    quality: 0.6,
+    note: 'Rice can substitute pasta in most dishes',
+    context: 'any',
+    tags: [],
+  },
+  {
+    id: 'sub-tomato-cherry',
+    from_ingredient: 'ing-cherry-tomato',
+    to_ingredient: 'ing-tomato',
+    ratio: 1.0,
+    quality: 0.8,
+    note: 'Regular tomato works instead of cherry tomatoes',
+    context: 'any',
+    tags: [],
+  },
+  {
+    id: 'sub-chicken-to-potato',
+    from_ingredient: 'ing-chicken',
+    to_ingredient: 'ing-potato',
+    ratio: 1.2,
+    quality: 0.5,
+    note: 'Potato can replace chicken in vegetable-based dishes',
+    context: 'any',
+    tags: ['vegetarian', 'vegan'],
+  },
+  {
+    id: 'sub-flour-to-rice',
+    from_ingredient: 'ing-flour',
+    to_ingredient: 'ing-rice',
+    ratio: 1.0,
+    quality: 0.3,
+    note: 'Rice flour can substitute wheat flour (different texture)',
+    context: 'any',
+    tags: ['gluten-free'],
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Seed Recipes (5+)
+// ---------------------------------------------------------------------------
 export const INITIAL_RECIPES: Recipe[] = [
   {
     id: 'recipe-egg-fried-rice',
@@ -174,11 +541,141 @@ export const INITIAL_RECIPES: Recipe[] = [
       { ingredient_id: 'ing-rice', quantity: 150, unit: 'g', optional: false },
       { ingredient_id: 'ing-eggs', quantity: 2, unit: 'pcs', optional: false },
       { ingredient_id: 'ing-onion', quantity: 60, unit: 'g', optional: false },
+      { ingredient_id: 'ing-oil', quantity: 15, unit: 'ml', optional: false },
+      { ingredient_id: 'ing-salt', quantity: 3, unit: 'g', optional: false },
     ],
     steps: [
       { position: 1, text: 'Chop the onion finely.', timer_seconds: null },
       { position: 2, text: 'Scramble the eggs in hot oil for 2 minutes.', timer_seconds: 120 },
       { position: 3, text: 'Add cooked rice and diced onion, stir fry for 5 minutes.', timer_seconds: 300 },
+    ],
+  },
+  {
+    id: 'recipe-potato-soup',
+    owner_id: null,
+    title: 'Simple Potato Soup',
+    servings: 2,
+    time_minutes: 30,
+    equipment: ['stovetop'],
+    is_seed: true,
+    source: 'RecipeForge Staff Hand-Curated',
+    license_note: 'Curated for budget students',
+    ingredients: [
+      { ingredient_id: 'ing-potato', quantity: 400, unit: 'g', optional: false },
+      { ingredient_id: 'ing-onion', quantity: 100, unit: 'g', optional: false },
+      { ingredient_id: 'ing-carrot', quantity: 100, unit: 'g', optional: false },
+      { ingredient_id: 'ing-salt', quantity: 5, unit: 'g', optional: false },
+      { ingredient_id: 'ing-water', quantity: 800, unit: 'ml', optional: false },
+      { ingredient_id: 'ing-oil', quantity: 20, unit: 'ml', optional: false },
+    ],
+    steps: [
+      { position: 1, text: 'Dice potatoes, carrots and onion into small chunks.', timer_seconds: null },
+      { position: 2, text: 'Fry onion and carrot in oil for 5 minutes until soft.', timer_seconds: 300 },
+      { position: 3, text: 'Add potatoes and water. Bring to boil.', timer_seconds: null },
+      { position: 4, text: 'Simmer on low heat for 20 minutes until potatoes are soft.', timer_seconds: 1200 },
+      { position: 5, text: 'Season with salt and serve.', timer_seconds: null },
+    ],
+  },
+  {
+    id: 'recipe-tomato-pasta',
+    owner_id: null,
+    title: 'Tomato Pasta',
+    servings: 2,
+    time_minutes: 25,
+    equipment: ['stovetop'],
+    is_seed: true,
+    source: 'RecipeForge Staff Hand-Curated',
+    license_note: 'Curated for budget students',
+    ingredients: [
+      { ingredient_id: 'ing-pasta', quantity: 200, unit: 'g', optional: false },
+      { ingredient_id: 'ing-tomato', quantity: 300, unit: 'g', optional: false },
+      { ingredient_id: 'ing-garlic', quantity: 10, unit: 'g', optional: false },
+      { ingredient_id: 'ing-onion', quantity: 80, unit: 'g', optional: true },
+      { ingredient_id: 'ing-oil', quantity: 20, unit: 'ml', optional: false },
+      { ingredient_id: 'ing-salt', quantity: 5, unit: 'g', optional: false },
+      { ingredient_id: 'ing-water', quantity: 1, unit: 'l', optional: false },
+    ],
+    steps: [
+      { position: 1, text: 'Boil salted water and cook pasta per packet instructions.', timer_seconds: 600 },
+      { position: 2, text: 'Fry garlic (and optional onion) in oil for 2 minutes.', timer_seconds: 120 },
+      { position: 3, text: 'Add chopped tomatoes, season with salt, simmer 10 minutes.', timer_seconds: 600 },
+      { position: 4, text: 'Drain pasta and toss with tomato sauce. Serve hot.', timer_seconds: null },
+    ],
+  },
+  {
+    id: 'recipe-chicken-rice',
+    owner_id: null,
+    title: 'One-Pot Chicken and Rice',
+    servings: 2,
+    time_minutes: 40,
+    equipment: ['stovetop'],
+    is_seed: true,
+    source: 'RecipeForge Staff Hand-Curated',
+    license_note: 'Curated for budget students',
+    ingredients: [
+      { ingredient_id: 'ing-chicken', quantity: 300, unit: 'g', optional: false },
+      { ingredient_id: 'ing-rice', quantity: 200, unit: 'g', optional: false },
+      { ingredient_id: 'ing-onion', quantity: 100, unit: 'g', optional: false },
+      { ingredient_id: 'ing-carrot', quantity: 100, unit: 'g', optional: false },
+      { ingredient_id: 'ing-garlic', quantity: 10, unit: 'g', optional: false },
+      { ingredient_id: 'ing-oil', quantity: 20, unit: 'ml', optional: false },
+      { ingredient_id: 'ing-salt', quantity: 5, unit: 'g', optional: false },
+      { ingredient_id: 'ing-water', quantity: 500, unit: 'ml', optional: false },
+    ],
+    steps: [
+      { position: 1, text: 'Cut chicken into bite-size pieces. Season with salt.', timer_seconds: null },
+      { position: 2, text: 'Brown chicken in oil for 5 minutes. Remove from pan.', timer_seconds: 300 },
+      { position: 3, text: 'Fry onion, carrot, and garlic for 3 minutes.', timer_seconds: 180 },
+      { position: 4, text: 'Add rice and water. Return chicken to pan.', timer_seconds: null },
+      { position: 5, text: 'Simmer covered on low heat for 20 minutes until rice is cooked.', timer_seconds: 1200 },
+    ],
+  },
+  {
+    id: 'recipe-scrambled-eggs',
+    owner_id: null,
+    title: 'Simple Scrambled Eggs',
+    servings: 1,
+    time_minutes: 10,
+    equipment: ['stovetop'],
+    is_seed: true,
+    source: 'RecipeForge Staff Hand-Curated',
+    license_note: 'Curated for budget students',
+    ingredients: [
+      { ingredient_id: 'ing-eggs', quantity: 3, unit: 'pcs', optional: false },
+      { ingredient_id: 'ing-milk', quantity: 30, unit: 'ml', optional: true },
+      { ingredient_id: 'ing-butter', quantity: 10, unit: 'g', optional: false },
+      { ingredient_id: 'ing-salt', quantity: 2, unit: 'g', optional: false },
+    ],
+    steps: [
+      { position: 1, text: 'Whisk eggs with a splash of milk and a pinch of salt.', timer_seconds: null },
+      { position: 2, text: 'Melt butter in a pan over medium heat.', timer_seconds: null },
+      { position: 3, text: 'Pour eggs in and stir gently for 3-4 minutes until just set.', timer_seconds: 240 },
+    ],
+  },
+  {
+    id: 'recipe-carrot-soup',
+    owner_id: null,
+    title: 'Creamy Carrot Soup',
+    servings: 2,
+    time_minutes: 35,
+    equipment: ['stovetop'],
+    is_seed: true,
+    source: 'RecipeForge Staff Hand-Curated',
+    license_note: 'Curated for budget students',
+    ingredients: [
+      { ingredient_id: 'ing-carrot', quantity: 500, unit: 'g', optional: false },
+      { ingredient_id: 'ing-onion', quantity: 100, unit: 'g', optional: false },
+      { ingredient_id: 'ing-garlic', quantity: 5, unit: 'g', optional: false },
+      { ingredient_id: 'ing-butter', quantity: 20, unit: 'g', optional: false },
+      { ingredient_id: 'ing-water', quantity: 500, unit: 'ml', optional: false },
+      { ingredient_id: 'ing-salt', quantity: 4, unit: 'g', optional: false },
+    ],
+    steps: [
+      { position: 1, text: 'Peel and chop carrots, onion and garlic.', timer_seconds: null },
+      { position: 2, text: 'Melt butter, sauté onion and garlic 3 minutes.', timer_seconds: 180 },
+      { position: 3, text: 'Add carrots and water. Bring to boil.', timer_seconds: null },
+      { position: 4, text: 'Simmer 20 minutes until carrots are tender.', timer_seconds: 1200 },
+      { position: 5, text: 'Blend until smooth. Season with salt.', timer_seconds: null },
     ],
   },
 ];
