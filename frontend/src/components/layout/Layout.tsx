@@ -1,11 +1,14 @@
 import React from 'react';
 import { BottomNav, TabId } from './BottomNav';
+import { TopNav } from './TopNav';
 
 export interface LayoutProps {
   children?: React.ReactNode;
   activeTab?: TabId | string | null;
   onTabChange?: (tab: TabId) => void;
   showNav?: boolean;
+  showTopNav?: boolean;
+  onLoginClick?: () => void;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -13,6 +16,8 @@ export const Layout: React.FC<LayoutProps> = ({
   activeTab = 'pantry',
   onTabChange,
   showNav = true,
+  showTopNav = false,
+  onLoginClick,
 }) => {
   return (
     <div
@@ -29,6 +34,7 @@ export const Layout: React.FC<LayoutProps> = ({
         overflowX: 'hidden',
       }}
     >
+      {showTopNav && <TopNav onLoginClick={onLoginClick} />}
       <div
         className="rf-layout__container"
         style={{

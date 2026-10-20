@@ -6,7 +6,7 @@
 import { User, PantryItem, Recipe, Ingredient } from '../types';
 
 export const DEMO_USER_ID = 'user-demo-1';
-export const DEMO_USER_EMAIL = 'demo@recipeforge.app';
+export const DEMO_USER_EMAIL = 'demo@recipeforge.local';
 export const DEMO_USER_PASSWORD = 'demopassword';
 
 export const DEMO_USER: User = {
