@@ -296,3 +296,167 @@ describe('App & Quick Item Search Integration (#32)', () => {
   });
 });
 
+describe('Matches Tab & Recipe Details Modal Integration (#33)', () => {
+  beforeEach(() => {
+    resetApiService();
+    localStorage.clear();
+  });
+
+  const navigateToMatches = async () => {
+    await waitFor(() => {
+      expect(screen.getByTestId('demo-badge')).toBeInTheDocument();
+    });
+
+    const matchesTab = screen.getByRole('tab', { name: /^matches$/i });
+    fireEvent.click(matchesTab);
+
+    await waitFor(() => {
+      expect(screen.getByText(/recipe matches based on your pantry/i)).toBeInTheDocument();
+    });
+  };
+
+  it('recipe cards render with button role, focusability, accessible label, and pointer cursor', async () => {
+    render(<App />);
+    await navigateToMatches();
+
+    const recipeCards = screen.getAllByRole('button', { name: /egg fried rice|potato soup|tomato pasta/i });
+    expect(recipeCards.length).toBeGreaterThan(0);
+
+    const firstCard = recipeCards[0];
+    expect(firstCard).toHaveAttribute('role', 'button');
+    expect(firstCard).toHaveAttribute('tabindex', '0');
+    expect(firstCard.style.cursor).toBe('pointer');
+    expect(firstCard).toHaveAttribute('aria-label');
+  });
+
+  it('clicking a recipe card opens the recipe details modal with title, ingredients, and steps', async () => {
+    const api = getApiService();
+    const getRecipeSpy = vi.spyOn(api.recipes, 'getRecipe');
+
+    render(<App />);
+    await navigateToMatches();
+
+    const eggFriedRiceCard = screen.getByTestId('recipe-card-recipe-egg-fried-rice');
+    fireEvent.click(eggFriedRiceCard);
+
+    // Modal opens
+    await waitFor(() => {
+      expect(screen.getByTestId('recipe-details-modal')).toBeInTheDocument();
+    });
+
+    // getRecipe was called with token and recipe id
+    expect(getRecipeSpy).toHaveBeenCalledWith(
+      expect.any(String),
+      'recipe-egg-fried-rice'
+    );
+
+    // Modal renders title, ingredients, and steps
+    expect(
+      screen.getByRole('heading', { level: 2, name: /quick egg fried rice/i })
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('recipe-ingredients-list')).toBeInTheDocument();
+    expect(screen.getByTestId('recipe-steps-list')).toBeInTheDocument();
+  });
+
+  it('keyboard activation via Enter and Space opens the modal', async () => {
+    render(<App />);
+    await navigateToMatches();
+
+    const eggFriedRiceCard = screen.getByTestId('recipe-card-recipe-egg-fried-rice');
+
+    // 1. Enter key
+    fireEvent.keyDown(eggFriedRiceCard, { key: 'Enter', code: 'Enter' });
+    await waitFor(() => {
+      expect(screen.getByTestId('recipe-details-modal')).toBeInTheDocument();
+    });
+
+    // Dismiss modal
+    fireEvent.click(screen.getByTestId('modal-close-button'));
+    await waitFor(() => {
+      expect(screen.queryByTestId('recipe-details-modal')).not.toBeInTheDocument();
+    });
+
+    // 2. Space key
+    fireEvent.keyDown(eggFriedRiceCard, { key: ' ', code: 'Space' });
+    await waitFor(() => {
+      expect(screen.getByTestId('recipe-details-modal')).toBeInTheDocument();
+    });
+  });
+
+  it('dismissing the modal via Close button, backdrop click, or Escape key restores focus and hides modal', async () => {
+    render(<App />);
+    await navigateToMatches();
+
+    const eggFriedRiceCard = screen.getByTestId('recipe-card-recipe-egg-fried-rice');
+
+    // --- Dismiss via Close button ---
+    fireEvent.click(eggFriedRiceCard);
+    await waitFor(() => {
+      expect(screen.getByTestId('recipe-details-modal')).toBeInTheDocument();
+    });
+
+    const closeBtn = screen.getByTestId('modal-close-button');
+    fireEvent.click(closeBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('recipe-details-modal')).not.toBeInTheDocument();
+    });
+    expect(document.activeElement).toBe(eggFriedRiceCard);
+
+    // --- Dismiss via backdrop click ---
+    fireEvent.click(eggFriedRiceCard);
+    await waitFor(() => {
+      expect(screen.getByTestId('recipe-details-modal')).toBeInTheDocument();
+    });
+
+    const backdrop = screen.getByTestId('recipe-modal-backdrop');
+    fireEvent.click(backdrop);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('recipe-details-modal')).not.toBeInTheDocument();
+    });
+    expect(document.activeElement).toBe(eggFriedRiceCard);
+
+    // --- Dismiss via Escape key ---
+    fireEvent.click(eggFriedRiceCard);
+    await waitFor(() => {
+      expect(screen.getByTestId('recipe-details-modal')).toBeInTheDocument();
+    });
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('recipe-details-modal')).not.toBeInTheDocument();
+    });
+    expect(document.activeElement).toBe(eggFriedRiceCard);
+  });
+
+  it('displays visible error message in modal when recipe details fetch fails', async () => {
+    const api = getApiService();
+    vi.spyOn(api.recipes, 'getRecipe').mockRejectedValueOnce(
+      new Error('500 Internal Server Error: Failed to fetch recipe')
+    );
+
+    render(<App />);
+    await navigateToMatches();
+
+    const eggFriedRiceCard = screen.getByTestId('recipe-card-recipe-egg-fried-rice');
+    fireEvent.click(eggFriedRiceCard);
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        /500 internal server error: failed to fetch recipe/i
+      );
+    });
+
+    // Dismiss option closes modal cleanly
+    const dismissBtn = screen.getByRole('button', { name: /^dismiss$/i });
+    fireEvent.click(dismissBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('recipe-details-modal')).not.toBeInTheDocument();
+    });
+  });
+});
+
+

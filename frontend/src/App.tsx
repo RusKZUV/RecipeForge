@@ -8,6 +8,7 @@ import { Card } from './components/ui/Card';
 import { Button } from './components/ui/Button';
 import { Badge } from './components/ui/Badge';
 import { Input } from './components/ui/Input';
+import { RecipeDetailsModal } from './components/recipes/RecipeDetailsModal';
 import { getApiService, INITIAL_INGREDIENTS, INGREDIENT_ALIASES } from './services';
 import { PantryItem, Recipe, ShoppingListItem, CreatePantryItemRequest } from './types';
 
@@ -83,6 +84,7 @@ export const AppContent: React.FC = () => {
   const [pantryItems, setPantryItems] = useState<PantryItem[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [shoppingItems, setShoppingItems] = useState<ShoppingListItem[]>([]);
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
 
   // Auto-login demo on initial load if no session exists and user hasn't explicitly logged out
   useEffect(() => {
@@ -354,12 +356,23 @@ export const AppContent: React.FC = () => {
               {recipes.map((r) => (
                 <div
                   key={r.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={r.title}
                   data-testid={`recipe-card-${r.id}`}
+                  onClick={() => setSelectedRecipeId(r.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+                      e.preventDefault();
+                      setSelectedRecipeId(r.id);
+                    }
+                  }}
                   style={{
                     padding: '10px 12px',
                     borderRadius: 'var(--radius-card)',
                     border: '1px solid var(--color-ink)',
                     backgroundColor: 'var(--color-paper)',
+                    cursor: 'pointer',
                   }}
                 >
                   <div style={{ fontWeight: 600, fontSize: 'var(--font-size-base)' }}>{r.title}</div>
@@ -413,6 +426,14 @@ export const AppContent: React.FC = () => {
             <p style={{ fontStyle: 'italic', color: 'var(--color-ink-soft)' }}>Your shopping list is empty.</p>
           )}
         </Card>
+      )}
+
+      {selectedRecipeId && token && (
+        <RecipeDetailsModal
+          recipeId={selectedRecipeId}
+          token={token}
+          onClose={() => setSelectedRecipeId(null)}
+        />
       )}
     </Layout>
   );
