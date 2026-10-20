@@ -1,3 +1,4 @@
+import { createRef } from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { Badge, ExpiryStatus } from './Badge';
@@ -86,5 +87,20 @@ describe('Badge Component', () => {
     const badge = screen.getByText('Fresh milk');
     const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
     expect(emojiRegex.test(badge.textContent || '')).toBe(false);
+  });
+
+  it('falls back gracefully to default card styling when given unknown status', () => {
+    // @ts-expect-error testing invalid status fallback
+    render(<Badge status="nonexistent_status">Custom tag</Badge>);
+    const badge = screen.getByText('Custom tag');
+    expect(badge).toHaveClass('rf-badge--default');
+    expect(badge.style.backgroundColor).toBe('var(--color-card)');
+    expect(badge.style.color).toBe('var(--color-ink)');
+  });
+
+  it('forwards ref correctly to the HTMLSpanElement', () => {
+    const ref = createRef<HTMLSpanElement>();
+    render(<Badge ref={ref}>Ref badge</Badge>);
+    expect(ref.current).toBeInstanceOf(HTMLSpanElement);
   });
 });

@@ -1,3 +1,4 @@
+import { createRef } from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { Input } from './Input';
@@ -55,5 +56,27 @@ describe('Input Component', () => {
     expect(screen.queryByRole('alert')).toBeNull();
     expect(input).toHaveAttribute('aria-invalid', 'false');
     expect(screen.getByText(/optional item notes/i)).toBeInTheDocument();
+  });
+
+  it('prioritizes error over helperText in aria-describedby when both are provided', () => {
+    render(
+      <Input
+        label="Item"
+        placeholder="e.g. Bread"
+        helperText="Enter name here"
+        error="Name is required"
+      />
+    );
+    const input = screen.getByLabelText(/item/i);
+    const errorAlert = screen.getByRole('alert');
+    expect(errorAlert).toBeInTheDocument();
+    expect(input.getAttribute('aria-describedby')).toBe(errorAlert.getAttribute('id'));
+    expect(screen.queryByText('Enter name here')).toBeNull();
+  });
+
+  it('forwards ref correctly to the HTMLInputElement', () => {
+    const ref = createRef<HTMLInputElement>();
+    render(<Input ref={ref} label="Referenced input" />);
+    expect(ref.current).toBeInstanceOf(HTMLInputElement);
   });
 });

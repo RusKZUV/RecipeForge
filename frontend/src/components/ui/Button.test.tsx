@@ -1,3 +1,4 @@
+import { createRef } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Button } from './Button';
@@ -76,5 +77,18 @@ describe('Button Component', () => {
     );
     const button = screen.getByRole('button', { name: /close dialog/i });
     expect(button).toHaveAttribute('aria-label', 'Close dialog');
+  });
+
+  it('defaults to type="button" to prevent accidental form submission', () => {
+    render(<Button>Click</Button>);
+    const button = screen.getByRole('button', { name: /click/i });
+    expect(button).toHaveAttribute('type', 'button');
+  });
+
+  it('forwards ref correctly to the HTMLButtonElement', () => {
+    const ref = createRef<HTMLButtonElement>();
+    render(<Button ref={ref}>Ref button</Button>);
+    expect(ref.current).toBeInstanceOf(HTMLButtonElement);
+    expect(ref.current?.textContent).toBe('Ref button');
   });
 });

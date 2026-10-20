@@ -82,4 +82,14 @@ describe('BottomNav Component', () => {
       expect(btn.style.color).toBe('var(--color-ink)');
     });
   });
+
+  it('handles unknown route string without throwing and leaves all tabs inactive', () => {
+    render(<BottomNav activeTab="nonexistent-route" />);
+
+    const buttons = screen.getAllByRole('tab');
+    buttons.forEach((btn) => {
+      expect(btn).not.toHaveClass('rf-bottom-nav__tab--active');
+      expect(btn).toHaveAttribute('aria-selected', 'false');
+    });
+  });
 });

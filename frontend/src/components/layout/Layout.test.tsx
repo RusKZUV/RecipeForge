@@ -46,4 +46,20 @@ describe('Layout Component', () => {
 
     expect(screen.queryByRole('navigation', { name: /main navigation/i })).toBeNull();
   });
+
+  it('prevents horizontal scrollbars and centers container with defined max-width', () => {
+    const { container } = render(
+      <Layout>
+        <div>Content block</div>
+      </Layout>
+    );
+
+    const layout = container.querySelector('.rf-layout') as HTMLElement;
+    const contentContainer = container.querySelector('.rf-layout__container') as HTMLElement;
+
+    expect(layout.style.overflowX).toBe('hidden');
+    expect(layout.style.alignItems).toBe('center');
+    expect(contentContainer.style.maxWidth).toBe('var(--layout-max-width)');
+    expect(contentContainer.style.boxSizing).toBe('border-box');
+  });
 });
