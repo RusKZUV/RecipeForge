@@ -22,10 +22,11 @@ Product plan: `docs/plan.md`. Read `docs/process.md` before starting any task.
 - Never claim an ingredient is safe to eat or a recipe is allergen-safe.
 
 ## Documents
-- `docs/plan.md` - product plan and specification (source of truth for behavior)
 - `docs/process.md` - workflow, roles, orchestrator (READ FIRST)
+- `docs/plan.md` - product plan and specification (source of truth for behavior)
 - `docs/task-template.md` - issue template
 - `docs/team/pm.md`, `docs/team/software-engineer.md`, `docs/team/qa-engineer.md` - role definitions
-- Before writing tests, read `docs/testing-guidelines.md`
-- For anything touching the UI, read `docs/design-system.md`
-- `docs/brainstorm.md` - original brainstorming chat (do not edit)
+- `docs/testing-guidelines.md` - testing strategy and checklist (read before writing tests)
+- `docs/design-system.md` - design tokens and rules (read before UI work)
+- `openapi.yaml` - API contract (keep in sync with backend)
+- `brainstorm.md` - original brainstorming chat (do not edit)
