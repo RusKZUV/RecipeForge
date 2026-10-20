@@ -7,7 +7,7 @@ Each task fits one agent session (UI + logic + tests where relevant).
 Phase: iter-1-frontend
 Scope: mvp
 Goal: Initialize React + Vite + TypeScript frontend with a passing test and the services abstraction layer.
-Description: Scaffold the frontend application with configuration to switch between mock service and real HTTP client via environment config. Implement initial service interfaces, a mock implementation simulating responses and auth, and verify setup with a passing Vitest test. Establish project structure and code standards according to AGENTS.md.
+Description: Scaffold the frontend application with configuration to switch between mock service and real HTTP client via environment config. If a generated design (v0/Lovable/Claude Design export) or `docs/design-references/` exists, it must be adopted and adapted, not replaced. Implement initial service interfaces, a mock implementation simulating responses and auth, and verify setup with a passing Vitest test.
 
 ## 2. Design system tokens and foundational layout
 Phase: iter-1-frontend
@@ -19,7 +19,7 @@ Description: Define typography, color tokens, and layout containers tailored for
 Phase: iter-1-frontend
 Scope: mvp
 Goal: Implement user registration, login, logout, profile settings, and simulated session expiry in the mock service.
-Description: Create authentication screens and user profile controls for dietary filters, equipment, and assumed staples settings (pepper and oil). Implement mock auth service simulating registration, bearer token issuance, and 401 Unauthorized responses upon token expiration. Add tests covering form validation, auth state transitions, and route protection.
+Description: Create authentication screens and user profile controls for dietary filters, equipment, and assumed staples (pepper, oil profile setting). Implement mock auth service simulating registration, bearer token issuance, and 401 Unauthorized responses upon token expiration. Add tests covering form validation, auth state transitions, and route protection.
 
 ## 4. Ingredient catalog search and autocomplete UI
 Phase: iter-1-frontend
@@ -42,14 +42,14 @@ Description: Build recipe list cards and detailed views displaying ingredients, 
 ## 7. Recipe matching and Balanced scoring UI
 Phase: iter-1-frontend
 Scope: mvp
-Goal: Display ranked recipe matches scored by coverage, urgency, missing cost, and fit with active filter toggles.
-Description: Implement client-side matching using the formula `0.45*coverage + 0.25*urgency + 0.20*missing_cost + 0.10*fit`, applying equipment, dietary, and expiry hard filters. Render recipe cards showing coverage percentage, explanation badges, missing cost estimates (or "price unknown"), and substitution suggestions. Include tests for scoring calculations, tie-break rules, and filter exclusion logic.
+Goal: Display ranked recipe matches scored by coverage, urgency, missing cost, and fit with dietary and equipment filters.
+Description: Implement client-side matching using the formula `0.45*coverage + 0.25*urgency + 0.20*missing_cost + 0.10*fit`, applying dietary filters (derived from ingredient flags), equipment, and expiry hard filters. Render recipe cards showing coverage percentage (excluding assumed staples), explanation badges, prices and costs in KZT (cost per recipe, "to buy", unknown price), and substitutions (rules table, respects active filters). Include tests for scoring calculations, tie-break rules, and filter exclusion logic.
 
 ## 8. Budget shopping list with "Bought -> Pantry" transfer
 Phase: iter-1-frontend
 Scope: mvp
 Goal: Generate a category-grouped shopping list from missing recipe ingredients and transfer bought items into the pantry.
-Description: Implement shopping list view that aggregates missing recipe ingredients, calculates approximate KZT costs, and excludes assumed staples. Provide a "Bought" checkbox action that moves purchased ingredients directly into the pantry inventory with quantity and expiry confirmation. Write tests verifying ingredient deduplication, cost calculation, and pantry state updates.
+Description: Implement shopping list view that aggregates missing recipe ingredients, calculates approximate prices and costs in KZT ("to buy", unknown price), and excludes assumed staples. Provide a "Bought" checkbox action that moves purchased ingredients directly into the pantry inventory with quantity and expiry confirmation. Write tests verifying ingredient deduplication, cost calculation, and pantry state updates.
 
 ## 9. Guided cook mode with parallel timers and "I cooked this"
 Phase: iter-1-frontend
@@ -67,49 +67,49 @@ Description: Implement dedicated empty state components for empty pantry, zero r
 Phase: iter-2-contract
 Scope: mvp
 Goal: Formalize the complete HTTP API contract in `openapi.yaml` covering all endpoints, schemas, and error responses.
-Description: Draft `openapi.yaml` at repo root defining endpoints for auth, catalog, pantry, recipes, matching, and shopping list based on the frontend service layer. Specify request/response schemas, status codes (including 401, 403, 404, 422), validation rules, and integer KZT currency representations. Validate the specification using automated schema linting to guarantee syntax correctness.
+Description: Draft `openapi.yaml` at repo root defining endpoints for auth, catalog, pantry, recipes, matching, shopping list, and cooking completion based on the frontend service layer. Specify request/response schemas, status codes (including 401, 403, 404, 422), validation rules, and integer KZT currency representations. Validate the specification using automated schema linting to guarantee syntax correctness.
 
-## 12. Frontend real API client and contract validation
-Phase: iter-2-contract
-Scope: mvp
-Goal: Implement the HTTP API client in `frontend/src/services` complying strictly with the OpenAPI specification.
-Description: Implement real HTTP client methods matching the service interface with bearer token injection and standard error handling. Verify that mock service fixtures and HTTP request/response payloads adhere to the schemas defined in `openapi.yaml`. Add test suites validating serialization, deserialization, auth header handling, and config switching.
-
-## 13. Empty FastAPI backend project and testing setup
+## 12. Empty FastAPI backend project, testing setup, and basic Makefile
 Phase: iter-3-backend-memory
 Scope: mvp
-Goal: Initialize FastAPI backend project with uv, Pydantic, pytest configuration, and a passing test.
-Description: Scaffold the backend application directory using `uv`, configure `app.main:app` running on port 8091, and set up CORS from environment variables. Configure pytest with fixtures, code style tooling, and a passing health-check test endpoint. Ensure scripts and dependency management comply with AGENTS.md rules.
+Goal: Initialize FastAPI backend project with uv, Pydantic, pytest configuration, basic Makefile (make run, make test), and a passing test.
+Description: Scaffold the backend application directory using `uv`, configure `app.main:app` running on port 8091, and set up CORS from environment variables. Provide a basic root Makefile implementing `make run` and `make test` targets for backend execution. Configure pytest with fixtures, code style tooling, and a passing health-check test endpoint complying with AGENTS.md rules.
 
-## 14. In-memory authentication and multi-tenant isolation
+## 13. In-memory authentication and multi-tenant isolation
 Phase: iter-3-backend-memory
 Scope: mvp
 Goal: Implement registration, login, bearer token validation, and per-user data isolation in memory.
 Description: Build `/auth/register`, `/auth/login`, and `/auth/me` endpoints using secure password hashing and bearer token generation with expiration. Implement FastAPI dependency injection providing authenticated user context and rejecting unauthorized or expired tokens with 401. Write tests verifying registration, login errors, token expiration, and strict multi-tenant resource protection.
 
-## 15. Ingredient catalog and normalization engine with unit conversions
+## 14. Ingredient catalog and normalization engine with unit conversions
 Phase: iter-3-backend-memory
 Scope: mvp
 Goal: Provide catalog querying, deterministic normalization, and unit conversion logic in the backend.
-Description: Implement catalog endpoints supporting English canonical names and Russian aliases with category and dietary metadata. Build the deterministic normalization engine (lowercase, trim, alias lookup) and unit conversion utilities (mass, volume, piece approximations). Add table-driven tests verifying normalization rules, conversion calculations, and invalid unit errors.
+Description: Implement catalog endpoints supporting English canonical names and Russian aliases with category metadata, dietary flags, and assumed staples flag (default water and salt). Build the deterministic normalization engine (lowercase, trim, alias lookup) and unit conversion utilities (mass, volume, piece approximations). Add table-driven tests verifying normalization rules, conversion calculations, and invalid unit errors.
 
-## 16. In-memory pantry inventory and Almaty-timezone expiry calculation
+## 15. In-memory pantry inventory and Almaty-timezone expiry calculation
 Phase: iter-3-backend-memory
 Scope: mvp
 Goal: Provide in-memory pantry CRUD endpoints with real-time expiry status evaluation relative to Almaty midnight.
 Description: Create endpoints to list, add, update, and delete pantry items with positive quantities and valid units. Calculate expiry statuses (`fresh`, `expiring_soon`, `expires_today`, `expired`) based on calendar dates in Almaty time (UTC+5) using an injectable clock. Add unit and endpoint tests covering CRUD operations, user isolation, and midnight boundary scenarios.
 
-## 17. In-memory recipe catalog, user recipe creation, and seed validation
+## 16. In-memory recipe catalog, user recipe creation, and seed validation
 Phase: iter-3-backend-memory
 Scope: mvp
 Goal: Serve seeded recipes, allow author-isolated recipe creation, and validate seed dataset integrity.
 Description: Implement endpoints for querying public seed recipes and creating private user recipes with ingredients, equipment, and ordered steps. Implement seed data loader for 25 recipes and ~80 ingredients alongside a `seed-check` validation routine verifying positive quantities, IDs, and valid units. Add pytest cases for recipe validation, author permissions, and seed integrity.
 
-## 18. In-memory recipe matching and scoring engine
+## 17. In-memory recipe matching and scoring engine
 Phase: iter-3-backend-memory
 Scope: mvp
-Goal: Implement recipe matching with Balanced scoring, hard filters, substitution rules, and cost calculations.
-Description: Build recipe matching endpoint applying dietary, equipment, and expiry hard filters followed by Balanced ranking (`0.45*coverage + 0.25*urgency + 0.20*missing_cost + 0.10*fit`). Support substitution rules (quality capped at 0.8), assumed staples exclusions, and integer KZT costs with 3000 KZT reference budget. Add parameterized tests verifying deterministic scoring, tie-breaking, and filter enforcement.
+Goal: Implement recipe matching with Balanced scoring, dietary filters (derived from ingredient flags), substitutions, and cost calculations.
+Description: Build recipe matching endpoint applying dietary filters (derived from ingredient flags), equipment, and expiry hard filters followed by Balanced ranking (`0.45*coverage + 0.25*urgency + 0.20*missing_cost + 0.10*fit`). Support substitutions (rules table, respects active filters with quality capped at 0.8), assumed staples exclusions from coverage and "to buy", and prices and costs in KZT (cost per recipe, "to buy", unknown price) with 3000 KZT reference budget. Add parameterized tests verifying deterministic scoring, tie-breaking, and filter enforcement.
+
+## 18. In-memory shopping list and cook completion
+Phase: iter-3-backend-memory
+Scope: mvp
+Goal: Implement in-memory shopping list and cook completion with unit merging, assumed staples exclusion, and pantry deduction.
+Description: Auto-build shopping lists from missing recipe ingredients calculating prices and costs in KZT ("to buy", unknown price), grouping by category with unit merging and assumed staples excluded. Implement "bought -> pantry" inventory transfer and the "I cooked this" pantry deduction endpoint respecting recipe ingredients, substitutions, and per-user isolation. Include tests for shopping list mutations, cooking stock deductions, and strict multi-tenant isolation.
 
 ## 19. SQLAlchemy 2.x ORM models and database configuration
 Phase: iter-4-sqlite
@@ -132,8 +132,8 @@ Description: Create shopping list persistence endpoints supporting item addition
 ## 22. Frontend and backend integration with live authentication
 Phase: iter-5-integration
 Scope: mvp
-Goal: Connect the React frontend to the live FastAPI backend with end-to-end authentication and token lifecycle.
-Description: Configure frontend HTTP service layer and environment variables to communicate with the FastAPI backend on port 8091 with CORS enabled. Verify end-to-end registration, login, profile updates, and automatic redirection to login upon 401 token expiration. Add automated integration tests verifying real HTTP requests, response handling, and header injection.
+Goal: Implement the real HTTP API client in the services layer and connect the frontend to the live FastAPI backend with live authentication.
+Description: Implement the real HTTP client in `frontend/src/services` matching `openapi.yaml` with bearer token injection, config switching, and error handling. Wire the frontend to the running FastAPI backend on port 8091 with CORS enabled, verifying end-to-end registration, login, profile updates, and 401 session expiration handling. Add automated integration tests validating schema adherence, real HTTP requests, response handling, and token interceptors.
 
 ## 23. End-to-end pantry-to-cooking user journey integration
 Phase: iter-5-integration
@@ -141,11 +141,11 @@ Scope: mvp
 Goal: Verify the complete user journey from pantry management through recipe matching, shopping, and cooking.
 Description: Integrate all application views against the persistent backend to ensure consistent state transitions across the full workflow. Validate that pantry changes update match rankings, missing ingredients transfer to shopping list, and "I cooked this" deducts inventory in SQLite. Add comprehensive integration test scenarios covering edge cases like unit conversions and substitutions.
 
-## 24. Root Makefile and Windows command scripts automation
+## 24. Project automation scripts (Makefile and Windows command scripts)
 Phase: iter-5-integration
 Scope: mvp
-Goal: Provide cross-platform automation commands for running, testing, seeding, and verifying the application.
-Description: Create root `Makefile` implementing `make run`, `make test`, `make seed`, and `make seed-check`. Provide equivalent Windows batch scripts (`run.cmd`, `test.cmd`, `seed.cmd`) running frontend and backend commands without make. Add test automation verifying that all script targets execute successfully and return zero exit codes.
+Goal: Extend the project Makefile and provide Windows command scripts for seeding, verification, and concurrent execution.
+Description: Extend the initial Makefile by adding `make seed`, `make seed-check`, and concurrent execution for both frontend and backend services. Provide equivalent Windows batch scripts (`run.cmd`, `test.cmd`, `seed.cmd`) executing identical commands for developers without make. Add test automation verifying that all script targets execute successfully and return zero exit codes.
 
 ## 25. Project documentation and manual QA scenario verification
 Phase: iter-5-integration
