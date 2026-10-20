@@ -1,23 +1,175 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Recipe } from '../../types';
+import { Recipe, RecipeIngredient, PantryItem } from '../../types';
 import { getApiService, INITIAL_INGREDIENTS } from '../../services';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 
+export interface MissingIngredient {
+  ingredient_id: string | null;
+  custom_name: string | null;
+  quantity: number;
+  unit: string;
+}
+
+export function isAssumedStaple(
+  ingredientId?: string | null,
+  customName?: string | null,
+  userStaples?: Record<string, boolean>
+): boolean {
+  const normId = (ingredientId || '').toLowerCase();
+  const normName = (customName || '').toLowerCase();
+
+  // Water & Salt are always staples
+  if (
+    normId === 'ing-water' ||
+    normName === 'water' ||
+    normName === 'вода' ||
+    normId === 'ing-salt' ||
+    normName === 'salt' ||
+    normName === 'соль'
+  ) {
+    return true;
+  }
+
+  // Check catalog assumed_staple flag
+  const catalogItem = INITIAL_INGREDIENTS.find((i) => i.id === ingredientId);
+  if (catalogItem?.assumed_staple) {
+    if (normId === 'ing-oil' || normName.includes('oil')) {
+      if (userStaples && userStaples['oil'] === false) return false;
+      return true;
+    }
+    return true;
+  }
+
+  // Pepper
+  if (
+    normId === 'ing-black-pepper' ||
+    normName.includes('pepper') ||
+    normName.includes('перец')
+  ) {
+    if (userStaples && userStaples['pepper'] === false) return false;
+    return true;
+  }
+
+  // Oil
+  if (
+    normId === 'ing-oil' ||
+    normName.includes('oil') ||
+    normName.includes('масло растительное')
+  ) {
+    if (userStaples && userStaples['oil'] === false) return false;
+    return true;
+  }
+
+  return false;
+}
+
+export function convertQuantity(qty: number, fromUnit: string, toUnit: string): number {
+  const from = (fromUnit || '').toLowerCase().trim();
+  const to = (toUnit || '').toLowerCase().trim();
+
+  if (from === to) {
+    return qty;
+  }
+
+  // Mass conversions: kg <-> g
+  if (from === 'kg' && to === 'g') return qty * 1000;
+  if (from === 'g' && to === 'kg') return qty / 1000;
+
+  // Volume conversions: l <-> ml
+  if (from === 'l' && to === 'ml') return qty * 1000;
+  if (from === 'ml' && to === 'l') return qty / 1000;
+
+  return 0;
+}
+
+export function calculateMissingIngredients(
+  recipeIngredients: RecipeIngredient[],
+  pantryItems: PantryItem[],
+  userStaples?: Record<string, boolean>
+): MissingIngredient[] {
+  const missing: MissingIngredient[] = [];
+
+  for (const reqIng of recipeIngredients) {
+    if (reqIng.optional) {
+      continue;
+    }
+
+    if (isAssumedStaple(reqIng.ingredient_id, reqIng.custom_name, userStaples)) {
+      continue;
+    }
+
+    const reqId = reqIng.ingredient_id?.toLowerCase();
+    const reqName = reqIng.custom_name?.toLowerCase();
+    const catalogItem = reqIng.ingredient_id
+      ? INITIAL_INGREDIENTS.find((i) => i.id === reqIng.ingredient_id)
+      : null;
+    const canonicalName = catalogItem?.canonical_name.toLowerCase();
+
+    const matchingPantryItems = pantryItems.filter((p) => {
+      if (reqId && p.ingredient_id && p.ingredient_id.toLowerCase() === reqId) {
+        return true;
+      }
+      const pName = (
+        p.custom_name ||
+        INITIAL_INGREDIENTS.find((i) => i.id === p.ingredient_id)?.canonical_name ||
+        ''
+      ).toLowerCase();
+      if (reqName && pName && reqName === pName) {
+        return true;
+      }
+      if (canonicalName && pName && canonicalName === pName) {
+        return true;
+      }
+      return false;
+    });
+
+    let availableQty = 0;
+    for (const p of matchingPantryItems) {
+      availableQty += convertQuantity(p.quantity, p.unit, reqIng.unit);
+    }
+
+    if (availableQty < reqIng.quantity) {
+      const diff = Math.round((reqIng.quantity - availableQty) * 100) / 100;
+      if (diff > 0) {
+        missing.push({
+          ingredient_id: reqIng.ingredient_id ?? null,
+          custom_name: reqIng.custom_name ?? (catalogItem?.canonical_name || null),
+          quantity: diff,
+          unit: reqIng.unit,
+        });
+      }
+    }
+  }
+
+  return missing;
+}
+
 export interface RecipeDetailsModalProps {
   recipeId: string;
   token: string;
+  pantryItems?: PantryItem[];
+  userStaples?: Record<string, boolean>;
+  onShoppingUpdated?: () => void;
   onClose: () => void;
 }
 
 export const RecipeDetailsModal: React.FC<RecipeDetailsModalProps> = ({
   recipeId,
   token,
+  pantryItems: initialPantryItems,
+  userStaples,
+  onShoppingUpdated,
   onClose,
 }) => {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [pantry, setPantry] = useState<PantryItem[]>(initialPantryItems || []);
+  const [isAddingMissing, setIsAddingMissing] = useState<boolean>(false);
+  const [isAdded, setIsAdded] = useState<boolean>(false);
+  const [shoppingFeedback, setShoppingFeedback] = useState<string | null>(null);
+  const [shoppingError, setShoppingError] = useState<string | null>(null);
 
   const modalRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
@@ -76,6 +228,59 @@ export const RecipeDetailsModal: React.FC<RecipeDetailsModalProps> = ({
   useEffect(() => {
     fetchRecipe();
   }, [recipeId, token]);
+
+  useEffect(() => {
+    if (initialPantryItems !== undefined) {
+      setPantry(initialPantryItems);
+    } else if (token) {
+      const api = getApiService();
+      api.pantry
+        .listItems(token)
+        .then(setPantry)
+        .catch(() => {});
+    }
+  }, [initialPantryItems, token]);
+
+  const missingItems = recipe
+    ? calculateMissingIngredients(recipe.ingredients, pantry, userStaples)
+    : [];
+  const allInPantry = !isLoading && !error && recipe ? missingItems.length === 0 : false;
+
+  const handleAddMissingToShopping = async () => {
+    if (!recipe || !token || allInPantry || isAddingMissing) return;
+
+    const itemsToAdd = calculateMissingIngredients(recipe.ingredients, pantry, userStaples);
+    if (itemsToAdd.length === 0) {
+      setShoppingFeedback('All items in pantry');
+      return;
+    }
+
+    setIsAddingMissing(true);
+    setShoppingError(null);
+    setShoppingFeedback(null);
+
+    try {
+      const api = getApiService();
+      for (const item of itemsToAdd) {
+        await api.shopping.addItem(token, {
+          ingredient_id: item.ingredient_id,
+          custom_name: item.custom_name,
+          quantity: item.quantity,
+          unit: item.unit,
+          source_recipes: [recipe.id],
+          servings: recipe.servings,
+        });
+      }
+
+      setIsAdded(true);
+      setShoppingFeedback(`Added ${itemsToAdd.length} missing items to shopping list`);
+      onShoppingUpdated?.();
+    } catch (err) {
+      setShoppingError((err as Error).message || 'Failed to add items to shopping list');
+    } finally {
+      setIsAddingMissing(false);
+    }
+  };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
@@ -368,6 +573,66 @@ export const RecipeDetailsModal: React.FC<RecipeDetailsModalProps> = ({
                   );
                 })}
               </ul>
+
+              <div style={{ marginTop: '12px' }}>
+                <Button
+                  type="button"
+                  variant="default"
+                  fullWidth
+                  data-testid="add-missing-shopping-btn"
+                  aria-label={
+                    isAddingMissing
+                      ? 'Adding missing items to shopping list'
+                      : isAdded
+                      ? 'Added to shopping list'
+                      : allInPantry
+                      ? 'All items in pantry'
+                      : 'Add missing to Shopping'
+                  }
+                  disabled={isAddingMissing || isAdded || allInPantry}
+                  onClick={handleAddMissingToShopping}
+                >
+                  {isAddingMissing
+                    ? 'Adding...'
+                    : isAdded
+                    ? 'Added to shopping list'
+                    : allInPantry
+                    ? 'All items in pantry'
+                    : 'Add missing to Shopping'}
+                </Button>
+
+                {shoppingFeedback && (
+                  <p
+                    role="status"
+                    data-testid="shopping-feedback"
+                    style={{
+                      marginTop: '8px',
+                      color: 'var(--color-olive-dark, #3E4A24)',
+                      fontSize: 'var(--font-size-sm)',
+                      fontWeight: 600,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {shoppingFeedback}
+                  </p>
+                )}
+
+                {shoppingError && (
+                  <p
+                    role="alert"
+                    data-testid="shopping-modal-error"
+                    style={{
+                      marginTop: '8px',
+                      color: 'var(--color-paprika)',
+                      fontSize: 'var(--font-size-sm)',
+                      fontWeight: 600,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {shoppingError}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Ordered instruction steps */}

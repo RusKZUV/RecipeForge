@@ -85,6 +85,10 @@ export const AppContent: React.FC = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [shoppingItems, setShoppingItems] = useState<ShoppingListItem[]>([]);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
+  const [deletingPantryIds, setDeletingPantryIds] = useState<string[]>([]);
+  const [pantryDeleteError, setPantryDeleteError] = useState<string>('');
+  const [deletingShoppingIds, setDeletingShoppingIds] = useState<string[]>([]);
+  const [shoppingError, setShoppingError] = useState<string>('');
 
   // Auto-login demo on initial load if no session exists and user hasn't explicitly logged out
   useEffect(() => {
@@ -127,6 +131,77 @@ export const AppContent: React.FC = () => {
         .catch(() => {});
     }
   }, [user, token]);
+
+  const refreshShoppingList = async () => {
+    if (!token) return;
+    try {
+      const api = getApiService();
+      const items = await api.shopping.listItems(token);
+      setShoppingItems(items);
+    } catch {}
+  };
+
+  const handleDeletePantryItem = async (itemId: string) => {
+    if (!token) return;
+    setDeletingPantryIds((prev) => [...prev, itemId]);
+    setPantryDeleteError('');
+
+    try {
+      const api = getApiService();
+      await api.pantry.deleteItem(token, itemId);
+      setPantryItems((prev) => {
+        const next = prev.filter((p) => p.id !== itemId);
+        setStatus(
+          `Connected to service. Logged in as ${user?.email} with ${next.length} pantry items.`
+        );
+        return next;
+      });
+    } catch (err) {
+      setPantryDeleteError((err as Error).message || 'Failed to delete pantry item');
+    } finally {
+      setDeletingPantryIds((prev) => prev.filter((id) => id !== itemId));
+    }
+  };
+
+  const handleDeleteShoppingItem = async (itemId: string) => {
+    if (!token) return;
+    setDeletingShoppingIds((prev) => [...prev, itemId]);
+    setShoppingError('');
+
+    try {
+      const api = getApiService();
+      await api.shopping.deleteItem(token, itemId);
+      setShoppingItems((prev) => prev.filter((s) => s.id !== itemId));
+    } catch (err) {
+      setShoppingError((err as Error).message || 'Failed to remove shopping item');
+    } finally {
+      setDeletingShoppingIds((prev) => prev.filter((id) => id !== itemId));
+    }
+  };
+
+  const handleMarkBoughtShoppingItem = async (item: ShoppingListItem) => {
+    if (!token) return;
+    setDeletingShoppingIds((prev) => [...prev, item.id]);
+    setShoppingError('');
+
+    try {
+      const api = getApiService();
+      await api.shopping.markBought(token, item.id);
+      setShoppingItems((prev) => prev.filter((s) => s.id !== item.id));
+
+      try {
+        const updatedPantry = await api.pantry.listItems(token);
+        setPantryItems(updatedPantry);
+        setStatus(
+          `Connected to service. Logged in as ${user?.email} with ${updatedPantry.length} pantry items.`
+        );
+      } catch {}
+    } catch (err) {
+      setShoppingError((err as Error).message || 'Failed to mark shopping item as bought');
+    } finally {
+      setDeletingShoppingIds((prev) => prev.filter((id) => id !== item.id));
+    }
+  };
 
   const handleAddItem = async (e?: React.FormEvent) => {
     if (e) {
@@ -297,7 +372,22 @@ export const AppContent: React.FC = () => {
             </form>
           </Card>
 
-          {pantryItems.length > 0 && (
+          {pantryDeleteError && (
+            <p
+              role="alert"
+              data-testid="pantry-error"
+              style={{
+                color: 'var(--color-paprika)',
+                fontSize: 'var(--font-size-sm)',
+                marginBottom: '8px',
+                fontWeight: 600,
+              }}
+            >
+              {pantryDeleteError}
+            </p>
+          )}
+
+          {pantryItems.length > 0 ? (
             <Card>
               <h3
                 className="rf-heading"
@@ -310,31 +400,85 @@ export const AppContent: React.FC = () => {
                 Pantry inventory ({pantryItems.length})
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {pantryItems.map((item) => (
-                  <div
-                    key={item.id}
-                    data-testid={`pantry-item-${item.id}`}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '8px 12px',
-                      borderRadius: 'var(--radius-card)',
-                      border: '1px solid var(--color-ink)',
-                      backgroundColor: 'var(--color-paper)',
-                    }}
-                  >
-                    <span style={{ fontWeight: 600 }}>
-                      {item.custom_name ||
-                        INITIAL_INGREDIENTS.find((i) => i.id === item.ingredient_id)?.canonical_name ||
-                        item.ingredient_id}
-                    </span>
-                    <span style={{ color: 'var(--color-ink-soft)', fontSize: 'var(--font-size-sm)' }}>
-                      {item.quantity} {item.unit}
-                    </span>
-                  </div>
-                ))}
+                {pantryItems.map((item) => {
+                  const itemName =
+                    item.custom_name ||
+                    INITIAL_INGREDIENTS.find((i) => i.id === item.ingredient_id)?.canonical_name ||
+                    item.ingredient_id ||
+                    'item';
+                  const isDeleting = deletingPantryIds.includes(item.id);
+
+                  return (
+                    <div
+                      key={item.id}
+                      data-testid={`pantry-item-${item.id}`}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '8px 12px',
+                        borderRadius: 'var(--radius-card)',
+                        border: '1px solid var(--color-ink)',
+                        backgroundColor: 'var(--color-paper)',
+                      }}
+                    >
+                      <div>
+                        <span style={{ fontWeight: 600 }}>{itemName}</span>
+                        <span
+                          style={{
+                            color: 'var(--color-ink-soft)',
+                            fontSize: 'var(--font-size-sm)',
+                            marginLeft: '8px',
+                          }}
+                        >
+                          {item.quantity} {item.unit}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label={`Delete ${itemName}`}
+                        data-testid={`delete-pantry-item-${item.id}`}
+                        disabled={isDeleting}
+                        onClick={() => handleDeletePantryItem(item.id)}
+                        style={{
+                          background: 'none',
+                          border: '1px solid transparent',
+                          borderRadius: 'var(--radius-card)',
+                          cursor: isDeleting ? 'not-allowed' : 'pointer',
+                          opacity: isDeleting ? 0.5 : 1,
+                          padding: '4px 8px',
+                          fontSize: '16px',
+                          lineHeight: 1,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
+            </Card>
+          ) : (
+            <Card>
+              <h3
+                className="rf-heading"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'var(--font-size-h3)',
+                  marginBottom: '12px',
+                }}
+              >
+                Pantry inventory (0)
+              </h3>
+              <p
+                data-testid="pantry-empty-state"
+                style={{ fontStyle: 'italic', color: 'var(--color-ink-soft)' }}
+              >
+                Your pantry is empty.
+              </p>
             </Card>
           )}
         </>
@@ -399,28 +543,98 @@ export const AppContent: React.FC = () => {
           <p style={{ color: 'var(--color-ink-soft)', marginBottom: '12px' }}>
             Budget shopping list for missing ingredients.
           </p>
+
+          {shoppingError && (
+            <p
+              role="alert"
+              data-testid="shopping-error"
+              style={{
+                color: 'var(--color-paprika)',
+                fontSize: 'var(--font-size-sm)',
+                marginBottom: '8px',
+                fontWeight: 600,
+              }}
+            >
+              {shoppingError}
+            </p>
+          )}
+
           {shoppingItems.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {shoppingItems.map((s) => (
-                <div
-                  key={s.id}
-                  data-testid={`shopping-item-${s.id}`}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius-card)',
-                    border: '1px solid var(--color-ink)',
-                    backgroundColor: 'var(--color-paper)',
-                  }}
-                >
-                  <span>{s.custom_name || s.ingredient_id}</span>
-                  <span style={{ color: 'var(--color-ink-soft)', fontSize: 'var(--font-size-sm)' }}>
-                    {s.quantity} {s.unit}
-                  </span>
-                </div>
-              ))}
+              {shoppingItems.map((s) => {
+                const itemName =
+                  s.custom_name ||
+                  INITIAL_INGREDIENTS.find((i) => i.id === s.ingredient_id)?.canonical_name ||
+                  s.ingredient_id ||
+                  'item';
+                const isBusy = deletingShoppingIds.includes(s.id);
+
+                return (
+                  <div
+                    key={s.id}
+                    data-testid={`shopping-item-${s.id}`}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 12px',
+                      borderRadius: 'var(--radius-card)',
+                      border: '1px solid var(--color-ink)',
+                      backgroundColor: 'var(--color-paper)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <input
+                        type="checkbox"
+                        aria-label={`Mark ${itemName} as bought`}
+                        data-testid={`bought-shopping-item-${s.id}`}
+                        disabled={isBusy}
+                        checked={false}
+                        onChange={() => handleMarkBoughtShoppingItem(s)}
+                        style={{
+                          width: '18px',
+                          height: '18px',
+                          cursor: isBusy ? 'not-allowed' : 'pointer',
+                        }}
+                      />
+                      <div>
+                        <span style={{ fontWeight: 600 }}>{itemName}</span>
+                        <span
+                          style={{
+                            color: 'var(--color-ink-soft)',
+                            fontSize: 'var(--font-size-sm)',
+                            marginLeft: '8px',
+                          }}
+                        >
+                          {s.quantity} {s.unit}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={`Remove ${itemName}`}
+                      data-testid={`delete-shopping-item-${s.id}`}
+                      disabled={isBusy}
+                      onClick={() => handleDeleteShoppingItem(s.id)}
+                      style={{
+                        background: 'none',
+                        border: '1px solid transparent',
+                        borderRadius: 'var(--radius-card)',
+                        cursor: isBusy ? 'not-allowed' : 'pointer',
+                        opacity: isBusy ? 0.5 : 1,
+                        padding: '4px 8px',
+                        fontSize: '16px',
+                        lineHeight: 1,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <p style={{ fontStyle: 'italic', color: 'var(--color-ink-soft)' }}>Your shopping list is empty.</p>
@@ -432,6 +646,9 @@ export const AppContent: React.FC = () => {
         <RecipeDetailsModal
           recipeId={selectedRecipeId}
           token={token}
+          pantryItems={pantryItems}
+          userStaples={user.assumed_staples}
+          onShoppingUpdated={refreshShoppingList}
           onClose={() => setSelectedRecipeId(null)}
         />
       )}

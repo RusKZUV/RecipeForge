@@ -586,11 +586,12 @@ export class MockApiService implements ApiService {
     targetPantry?: Partial<CreatePantryItemRequest>
   ): Promise<void> {
     const user = this.authenticate(token);
-    const item = this.shoppingItems.find((s) => s.id === id);
+    const index = this.shoppingItems.findIndex((s) => s.id === id);
 
-    if (!item) {
+    if (index === -1) {
       throw new ApiError(404, 'Shopping item not found');
     }
+    const item = this.shoppingItems[index];
     if (item.user_id !== user.id) {
       throw new ApiError(403, 'Forbidden: Resource belongs to another user');
     }
@@ -605,5 +606,7 @@ export class MockApiService implements ApiService {
       unit: targetPantry?.unit ?? item.unit,
       expires_on: targetPantry?.expires_on ?? null,
     });
+
+    this.shoppingItems.splice(index, 1);
   }
 }

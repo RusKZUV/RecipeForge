@@ -49,6 +49,14 @@ def test_pantry_crud_and_isolation(client, auth_headers):
     )
     assert forbidden_resp.status_code == 403
 
+    # User 2 deleting User 1's item returns 403 Forbidden
+    forbidden_del = client.delete(f"/pantry/{item_id}", headers=u2_headers)
+    assert forbidden_del.status_code == 403
+
+    # Non-existent item delete returns 404 Not Found
+    del_nonexistent = client.delete("/pantry/pantry-non-existent", headers=auth_headers)
+    assert del_nonexistent.status_code == 404
+
     # 6. Delete item
     del_resp = client.delete(f"/pantry/{item_id}", headers=auth_headers)
     assert del_resp.status_code == 200

@@ -459,4 +459,234 @@ describe('Matches Tab & Recipe Details Modal Integration (#33)', () => {
   });
 });
 
+describe('Pantry Item Deletion & Shopping List Tab Integration (#34)', () => {
+  beforeEach(() => {
+    resetApiService();
+    localStorage.clear();
+  });
+
+  it('deleting a pantry item triggers pantry.deleteItem, decrements count, and removes item from DOM', async () => {
+    const api = getApiService();
+    const deleteSpy = vi.spyOn(api.pantry, 'deleteItem');
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('status-message')).toHaveTextContent(
+        /Connected to service\. Logged in as demo@recipeforge\.local with 8 pantry items\./i
+      );
+    });
+
+    // Check first item exists
+    expect(screen.getByTestId('pantry-item-pantry-item-1')).toBeInTheDocument();
+
+    const deleteBtn = screen.getByTestId('delete-pantry-item-pantry-item-1');
+    expect(deleteBtn).toHaveAttribute('aria-label', expect.stringMatching(/delete/i));
+
+    fireEvent.click(deleteBtn);
+
+    await waitFor(() => {
+      expect(deleteSpy).toHaveBeenCalledTimes(1);
+    });
+    expect(deleteSpy).toHaveBeenCalledWith(expect.any(String), 'pantry-item-1');
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('pantry-item-pantry-item-1')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId('status-message')).toHaveTextContent(
+      /Connected to service\. Logged in as demo@recipeforge\.local with 7 pantry items\./i
+    );
+  });
+
+  it('disables delete button while pantry delete request is in flight', async () => {
+    const api = getApiService();
+    let resolveDelete!: () => void;
+    const deletePromise = new Promise<void>((resolve) => {
+      resolveDelete = resolve;
+    });
+    vi.spyOn(api.pantry, 'deleteItem').mockReturnValueOnce(deletePromise);
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('pantry-item-pantry-item-1')).toBeInTheDocument();
+    });
+
+    const deleteBtn = screen.getByTestId('delete-pantry-item-pantry-item-1');
+    fireEvent.click(deleteBtn);
+
+    // In flight: button is disabled
+    expect(deleteBtn).toBeDisabled();
+
+    // Resolve deletion
+    resolveDelete();
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('pantry-item-pantry-item-1')).not.toBeInTheDocument();
+    });
+  });
+
+  it('displays visible error message and keeps pantry item in list when deleteItem fails', async () => {
+    const api = getApiService();
+    vi.spyOn(api.pantry, 'deleteItem').mockRejectedValueOnce(
+      new Error('Failed to delete: Network connection error')
+    );
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('pantry-item-pantry-item-1')).toBeInTheDocument();
+    });
+
+    const deleteBtn = screen.getByTestId('delete-pantry-item-pantry-item-1');
+    fireEvent.click(deleteBtn);
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        /failed to delete: network connection error/i
+      );
+    });
+
+    // Item remains in the DOM
+    expect(screen.getByTestId('pantry-item-pantry-item-1')).toBeInTheDocument();
+    expect(deleteBtn).not.toBeDisabled();
+  });
+
+  it('deleting all pantry items displays the empty state gracefully', async () => {
+    const api = getApiService();
+    // Return a single pantry item so we only need to delete one
+    vi.spyOn(api.pantry, 'listItems').mockResolvedValue([
+      {
+        id: 'pantry-only-1',
+        user_id: 'user-demo-1',
+        ingredient_id: 'ing-eggs',
+        custom_name: null,
+        quantity: 6,
+        unit: 'pcs',
+        expires_on: '2026-10-25',
+        created_at: '2026-10-18T10:00:00Z',
+        updated_at: '2026-10-18T10:00:00Z',
+        expiry_status: 'fresh',
+      },
+    ]);
+    vi.spyOn(api.pantry, 'deleteItem').mockResolvedValue(undefined as any);
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('pantry-item-pantry-only-1')).toBeInTheDocument();
+    });
+
+    const deleteBtn = screen.getByTestId('delete-pantry-item-pantry-only-1');
+    fireEvent.click(deleteBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('pantry-empty-state')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/your pantry is empty/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: /pantry inventory \(0\)/i })).toBeInTheDocument();
+  });
+
+  it('Shopping tab renders items and clicking remove/bought removes them from UI', async () => {
+    const api = getApiService();
+    // Pre-populate shopping items
+    const demoUser = await api.auth.loginAsDemo();
+    const shopItem1 = await api.shopping.addItem(demoUser.token.access_token, {
+      ingredient_id: 'ing-bread',
+      quantity: 1,
+      unit: 'pcs',
+    });
+    const shopItem2 = await api.shopping.addItem(demoUser.token.access_token, {
+      ingredient_id: 'ing-butter',
+      quantity: 200,
+      unit: 'g',
+    });
+
+    const deleteShoppingSpy = vi.spyOn(api.shopping, 'deleteItem');
+    const markBoughtSpy = vi.spyOn(api.shopping, 'markBought');
+
+    render(<App />);
+
+    // Wait for demo user
+    await waitFor(() => {
+      expect(screen.getByTestId('demo-badge')).toBeInTheDocument();
+    });
+
+    // Switch to Shopping tab
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /^shopping$/i })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('tab', { name: /^shopping$/i }));
+
+    // Both items render
+    await waitFor(() => {
+      expect(screen.getByTestId(`shopping-item-${shopItem1.id}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`shopping-item-${shopItem2.id}`)).toBeInTheDocument();
+    });
+
+    // 1. Remove first item via trash button
+    const deleteBtn = screen.getByTestId(`delete-shopping-item-${shopItem1.id}`);
+    expect(deleteBtn).toHaveAttribute('aria-label', expect.stringMatching(/remove/i));
+    fireEvent.click(deleteBtn);
+
+    await waitFor(() => {
+      expect(deleteShoppingSpy).toHaveBeenCalledWith(expect.any(String), shopItem1.id);
+      expect(screen.queryByTestId(`shopping-item-${shopItem1.id}`)).not.toBeInTheDocument();
+    });
+
+    // Second item remains
+    expect(screen.getByTestId(`shopping-item-${shopItem2.id}`)).toBeInTheDocument();
+
+    // 2. Mark second item as bought via checkbox
+    const checkbox = screen.getByTestId(`bought-shopping-item-${shopItem2.id}`);
+    expect(checkbox).toHaveAttribute('aria-label', expect.stringMatching(/mark .* as bought/i));
+    fireEvent.click(checkbox);
+
+    await waitFor(() => {
+      expect(markBoughtSpy).toHaveBeenCalledWith(expect.any(String), shopItem2.id);
+      expect(screen.queryByTestId(`shopping-item-${shopItem2.id}`)).not.toBeInTheDocument();
+    });
+
+    // Empty state is rendered
+    expect(screen.getByText(/your shopping list is empty\./i)).toBeInTheDocument();
+  });
+
+  it('Shopping tab displays error when removing an item fails and keeps it in list', async () => {
+    const api = getApiService();
+    const demoUser = await api.auth.loginAsDemo();
+    const shopItem = await api.shopping.addItem(demoUser.token.access_token, {
+      ingredient_id: 'ing-salt',
+      quantity: 1,
+      unit: 'kg',
+    });
+
+    vi.spyOn(api.shopping, 'deleteItem').mockRejectedValueOnce(
+      new Error('Shopping service remove failed')
+    );
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('demo-badge')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('tab', { name: /^shopping$/i }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId(`shopping-item-${shopItem.id}`)).toBeInTheDocument();
+    });
+
+    const deleteBtn = screen.getByTestId(`delete-shopping-item-${shopItem.id}`);
+    fireEvent.click(deleteBtn);
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/shopping service remove failed/i);
+    });
+
+    expect(screen.getByTestId(`shopping-item-${shopItem.id}`)).toBeInTheDocument();
+  });
+});
+
 

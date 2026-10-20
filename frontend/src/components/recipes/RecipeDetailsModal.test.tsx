@@ -278,4 +278,176 @@ describe('RecipeDetailsModal Component (#33)', () => {
     expect(document.activeElement).toBe(testButton);
     document.body.removeChild(testButton);
   });
+
+  it('calculates missing ingredients excluding staples (water, salt) and optional items, and posts to shopping.addItem', async () => {
+    const api = getApiService();
+    const recipeWithStaples: Recipe = {
+      ...mockSeedRecipe,
+      ingredients: [
+        { ingredient_id: 'ing-pasta', custom_name: null, quantity: 200, unit: 'g', optional: false },
+        { ingredient_id: 'ing-garlic', custom_name: null, quantity: 3, unit: 'pcs', optional: false },
+        { ingredient_id: 'ing-parmesan', custom_name: 'parmesan', quantity: 30, unit: 'g', optional: true },
+        { ingredient_id: 'ing-water', custom_name: null, quantity: 500, unit: 'ml', optional: false },
+        { ingredient_id: 'ing-salt', custom_name: null, quantity: 5, unit: 'g', optional: false },
+      ],
+    };
+
+    vi.spyOn(api.recipes, 'getRecipe').mockResolvedValueOnce(recipeWithStaples);
+    const addItemSpy = vi.spyOn(api.shopping, 'addItem').mockResolvedValue({ id: 'shop-1' } as any);
+    const onShoppingUpdatedSpy = vi.fn();
+
+    // Pantry has 50g pasta
+    const mockPantry = [
+      {
+        id: 'p-1',
+        user_id: 'u-1',
+        ingredient_id: 'ing-pasta',
+        custom_name: null,
+        quantity: 50,
+        unit: 'g',
+        expires_on: null,
+        created_at: '',
+        updated_at: '',
+        expiry_status: 'fresh' as const,
+      },
+    ];
+
+    render(
+      <RecipeDetailsModal
+        recipeId="recipe-test-1"
+        token="test-token"
+        pantryItems={mockPantry}
+        onShoppingUpdated={onShoppingUpdatedSpy}
+        onClose={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('add-missing-shopping-btn')).toBeInTheDocument();
+    });
+
+    const addBtn = screen.getByTestId('add-missing-shopping-btn');
+    expect(addBtn).toHaveTextContent(/add missing to shopping/i);
+    expect(addBtn).not.toBeDisabled();
+
+    fireEvent.click(addBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('shopping-feedback')).toHaveTextContent(
+        /added 2 missing items to shopping list/i
+      );
+    });
+
+    // Verify exactly 2 calls were made: pasta (150g) and garlic (3 pcs)
+    // Water and salt are staples (excluded), parmesan is optional (excluded)
+    expect(addItemSpy).toHaveBeenCalledTimes(2);
+    expect(addItemSpy).toHaveBeenCalledWith(
+      'test-token',
+      expect.objectContaining({
+        ingredient_id: 'ing-pasta',
+        quantity: 150,
+        unit: 'g',
+        source_recipes: ['recipe-test-1'],
+      })
+    );
+    expect(addItemSpy).toHaveBeenCalledWith(
+      'test-token',
+      expect.objectContaining({
+        ingredient_id: 'ing-garlic',
+        quantity: 3,
+        unit: 'pcs',
+        source_recipes: ['recipe-test-1'],
+      })
+    );
+
+    expect(onShoppingUpdatedSpy).toHaveBeenCalledTimes(1);
+    expect(addBtn).toHaveTextContent(/added to shopping list/i);
+    expect(addBtn).toBeDisabled();
+  });
+
+  it('indicates all items are in pantry when user has sufficient quantities', async () => {
+    const api = getApiService();
+    vi.spyOn(api.recipes, 'getRecipe').mockResolvedValueOnce(mockSeedRecipe);
+    const addItemSpy = vi.spyOn(api.shopping, 'addItem');
+
+    // Pantry has sufficient pasta and garlic
+    const fullPantry = [
+      {
+        id: 'p-1',
+        user_id: 'u-1',
+        ingredient_id: 'ing-pasta',
+        custom_name: null,
+        quantity: 300,
+        unit: 'g',
+        expires_on: null,
+        created_at: '',
+        updated_at: '',
+        expiry_status: 'fresh' as const,
+      },
+      {
+        id: 'p-2',
+        user_id: 'u-1',
+        ingredient_id: 'ing-garlic',
+        custom_name: null,
+        quantity: 5,
+        unit: 'pcs',
+        expires_on: null,
+        created_at: '',
+        updated_at: '',
+        expiry_status: 'fresh' as const,
+      },
+    ];
+
+    render(
+      <RecipeDetailsModal
+        recipeId="recipe-test-1"
+        token="test-token"
+        pantryItems={fullPantry}
+        onClose={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('add-missing-shopping-btn')).toBeInTheDocument();
+    });
+
+    const addBtn = screen.getByTestId('add-missing-shopping-btn');
+    expect(addBtn).toHaveTextContent(/all items in pantry/i);
+    expect(addBtn).toBeDisabled();
+    expect(addItemSpy).not.toHaveBeenCalled();
+  });
+
+  it('displays accessible error message when adding missing items fails', async () => {
+    const api = getApiService();
+    vi.spyOn(api.recipes, 'getRecipe').mockResolvedValueOnce(mockSeedRecipe);
+    vi.spyOn(api.shopping, 'addItem').mockRejectedValueOnce(
+      new Error('Shopping service unavailable')
+    );
+
+    render(
+      <RecipeDetailsModal
+        recipeId="recipe-test-1"
+        token="test-token"
+        pantryItems={[]}
+        onClose={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('add-missing-shopping-btn')).toBeInTheDocument();
+    });
+
+    const addBtn = screen.getByTestId('add-missing-shopping-btn');
+    fireEvent.click(addBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('shopping-modal-error')).toHaveTextContent(
+        /shopping service unavailable/i
+      );
+    });
+
+    // Button is re-enabled for retry
+    expect(addBtn).not.toBeDisabled();
+    expect(addBtn).toHaveTextContent(/add missing to shopping/i);
+  });
 });
