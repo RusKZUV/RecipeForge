@@ -1,19 +1,4 @@
-:root {
-  --color-paper: #F6EFE2;
-  --color-card: #FFFBF2;
-  --color-ink: #2B2118;
-  --color-ink-soft: #5A4A3A;
-  --color-paprika: #B83A22;
-  --color-turmeric: #E0A526;
-  --color-olive-text: #3E4A24;
-  --color-olive-bg: #E3E8D3;
-  --color-expired-text: #6B2A1D;
-  --color-expired-bg: #E6D9C8;
-
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: var(--color-ink);
-  background-color: var(--color-paper);
-}
+@import './styles/tokens.css';
 
 * {
   box-sizing: border-box;
@@ -25,4 +10,5 @@ body {
   min-height: 100vh;
   background-color: var(--color-paper);
   color: var(--color-ink);
+  font-family: var(--font-body);
 }

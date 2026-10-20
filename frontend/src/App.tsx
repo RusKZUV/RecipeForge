@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { getApiService } from './services';
+import { Layout } from './components/layout/Layout';
+import { TabId } from './components/layout/BottomNav';
+import { Card } from './components/ui/Card';
+import { Button } from './components/ui/Button';
+import { Badge } from './components/ui/Badge';
+import { Input } from './components/ui/Input';
 
 export const App: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<TabId>('pantry');
   const [status, setStatus] = useState<string>('Initializing RecipeForge services...');
   const [demoLoaded, setDemoLoaded] = useState<boolean>(false);
+  const [inputValue, setInputValue] = useState<string>('');
 
   useEffect(() => {
     const api = getApiService();
@@ -20,65 +28,82 @@ export const App: React.FC = () => {
   }, []);
 
   return (
-    <div
-      style={{
-        padding: '24px',
-        maxWidth: '480px',
-        margin: '0 auto',
-      }}
-    >
-      <header style={{ marginBottom: '20px' }}>
-        <h1
-          style={{
-            fontFamily: 'serif',
-            fontSize: '28px',
-            color: '#2B2118',
-            marginBottom: '4px',
-          }}
-        >
-          RecipeForge
-        </h1>
-        <p style={{ color: '#5A4A3A', fontSize: '14px' }}>
-          Kitchen notebook for budget dorm cooking
+    <Layout activeTab={activeTab} onTabChange={setActiveTab}>
+      <header style={{ marginBottom: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <h1
+            className="rf-heading"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--font-size-h1)',
+              marginBottom: '4px',
+            }}
+          >
+            RecipeForge
+          </h1>
+          <span
+            className="rf-accent"
+            style={{
+              fontFamily: 'var(--font-handwritten)',
+              fontSize: 'var(--font-size-h3)',
+            }}
+          >
+            Kitchen notebook
+          </span>
+        </div>
+        <p style={{ color: 'var(--color-ink-soft)', fontSize: 'var(--font-size-base)' }}>
+          Budget dorm cooking from ingredients you already have
         </p>
       </header>
 
-      <main
-        style={{
-          background: '#FFFBF2',
-          border: '1.5px solid #2B2118',
-          borderRadius: '14px',
-          boxShadow: '3px 3px 0 #2B2118',
-          padding: '18px',
-        }}
-      >
-        <h2 style={{ fontSize: '18px', marginBottom: '8px' }}>Scaffolding &amp; Services</h2>
-        <p style={{ fontSize: '14px', marginBottom: '14px', color: '#5A4A3A' }} data-testid="status-message">
+      <Card>
+        <h2
+          className="rf-heading"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'var(--font-size-h3)',
+            marginBottom: '8px',
+          }}
+        >
+          Scaffolding &amp; Services
+        </h2>
+        <p
+          data-testid="status-message"
+          style={{
+            fontSize: 'var(--font-size-base)',
+            marginBottom: '14px',
+            color: 'var(--color-ink-soft)',
+          }}
+        >
           {status}
         </p>
         {demoLoaded && (
-          <div
-            data-testid="demo-badge"
-            style={{
-              display: 'inline-block',
-              background: '#E3E8D3',
-              color: '#3E4A24',
-              padding: '4px 10px',
-              borderRadius: '99px',
-              border: '1.5px solid #2B2118',
-              fontSize: '12px',
-              fontWeight: 600,
-            }}
-          >
-            Demo account ready
+          <div style={{ marginBottom: '14px' }}>
+            <Badge status="fresh" data-testid="demo-badge">
+              Demo account ready
+            </Badge>
           </div>
         )}
-      </main>
+      </Card>
 
-      <footer style={{ marginTop: '24px', fontSize: '11px', color: '#5A4A3A' }}>
-        Persistent note: dates are user estimates; the app never claims an item is safe.
-      </footer>
-    </div>
+      <Card>
+        <Input
+          label="Quick item search"
+          placeholder="milk, tomatoes, рис..."
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          helperText="Type ingredients to check availability"
+        />
+        <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+          <Button variant="default" fullWidth>
+            Add item
+          </Button>
+          <Button variant="outlined">
+            Cancel
+          </Button>
+        </div>
+      </Card>
+    </Layout>
   );
 };
 

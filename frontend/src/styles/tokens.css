@@ -1,0 +1,282 @@
+/* RecipeForge Design System Tokens */
+/* Source of truth for colors, typography, shapes, and spacing */
+
+:root {
+  /* 8 exact hex color tokens from docs/design-system.md */
+  --color-paper: #F6EFE2;
+  --color-card: #FFFBF2;
+  --color-ink: #2B2118;
+  --color-ink-soft: #5A4A3A;
+  --color-paprika: #B83A22;
+  --color-turmeric: #E0A526;
+  --color-olive-fg: #3E4A24;
+  --color-olive-bg: #E3E8D3;
+  --color-expired-fg: #6B2A1D;
+  --color-expired-bg: #E6D9C8;
+
+  /* Aliases for backwards compatibility */
+  --color-olive-text: var(--color-olive-fg);
+  --color-expired-text: var(--color-expired-fg);
+
+  /* Typography */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-handwritten: 'Caveat', cursive;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Typography scale */
+  --font-size-legal: 11px;
+  --font-size-sm: 13px;
+  --font-size-base: 15px;
+  --font-size-h3: 18px;
+  --font-size-h2: 24px;
+  --font-size-h1: 30px;
+
+  /* Shape and spacing */
+  --border-width: 1.5px;
+  --border-ink: 1.5px solid var(--color-ink);
+  --shadow-card: 3px 3px 0 var(--color-ink);
+  --radius-card: 14px;
+  --radius-pill: 99px;
+  --touch-target-min: 44px;
+
+  /* Layout container */
+  --space-page-x: 18px;
+  --gap-cards: 12px;
+  --layout-max-width: 480px;
+}
+
+/* Base resets & typography */
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Card Component */
+.rf-card {
+  background-color: var(--color-card);
+  border: var(--border-ink);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* Button Component */
+.rf-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  min-height: var(--touch-target-min);
+  border-radius: var(--radius-pill);
+  border: var(--border-ink);
+  padding: 0 20px;
+  cursor: pointer;
+  box-sizing: border-box;
+  text-decoration: none;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.rf-button--default {
+  background-color: var(--color-ink);
+  color: var(--color-card);
+}
+
+.rf-button--outlined {
+  background-color: var(--color-card);
+  color: var(--color-ink);
+}
+
+.rf-button--full-width {
+  width: 100%;
+}
+
+.rf-button:disabled,
+.rf-button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Input Component */
+.rf-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.rf-input-label {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.rf-input {
+  min-height: var(--touch-target-min);
+  padding: 10px 14px;
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  color: var(--color-ink);
+  background-color: var(--color-card);
+  border: var(--border-ink);
+  border-radius: var(--radius-card);
+  box-sizing: border-box;
+  width: 100%;
+  outline: none;
+}
+
+.rf-input::placeholder {
+  color: var(--color-ink-soft);
+  opacity: 0.8;
+}
+
+.rf-input:focus {
+  box-shadow: var(--shadow-card);
+}
+
+.rf-input--error {
+  border-color: var(--color-paprika);
+}
+
+.rf-input-error {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-paprika);
+  font-weight: 500;
+}
+
+/* Badge Component */
+.rf-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-target-min);
+  border-radius: var(--radius-pill);
+  border: var(--border-ink);
+  padding: 0 16px;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.rf-badge--fresh {
+  color: var(--color-olive-fg);
+  background-color: var(--color-olive-bg);
+}
+
+.rf-badge--expiring-soon,
+.rf-badge--expiring_soon {
+  color: var(--color-ink);
+  background-color: var(--color-turmeric);
+}
+
+.rf-badge--expires-today,
+.rf-badge--expires_today {
+  color: var(--color-card);
+  background-color: var(--color-paprika);
+}
+
+.rf-badge--expired {
+  color: var(--color-expired-fg);
+  background-color: var(--color-expired-bg);
+}
+
+.rf-badge--default {
+  color: var(--color-ink);
+  background-color: var(--color-card);
+}
+
+/* BottomNav Component */
+.rf-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--layout-max-width);
+  background-color: var(--color-card);
+  border-top: var(--border-ink);
+  display: flex;
+  align-items: stretch;
+  box-sizing: border-box;
+  z-index: 100;
+  overflow-x: hidden;
+}
+
+.rf-bottom-nav__tab {
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-ink);
+  background-color: var(--color-card);
+  border: none;
+  cursor: pointer;
+  padding: 8px 4px;
+  text-decoration: none;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.rf-bottom-nav__tab--active {
+  background-color: var(--color-ink);
+  color: var(--color-card);
+}
+
+/* Layout Component */
+.rf-layout {
+  min-height: 100vh;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.rf-layout__container {
+  width: 100%;
+  max-width: var(--layout-max-width);
+  padding: 18px var(--space-page-x) 80px var(--space-page-x);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-cards);
+  box-sizing: border-box;
+}
+
+.rf-heading {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.rf-accent {
+  font-family: var(--font-handwritten);
+  font-weight: 600;
+  color: var(--color-paprika);
+}
+
+.rf-legal-note {
+  font-family: var(--font-body);
+  font-size: var(--font-size-legal);
+  color: var(--color-ink-soft);
+}
