@@ -306,71 +306,73 @@ export const AppContent: React.FC = () => {
 
       {activeTab === 'pantry' && (
         <>
-          <Card>
-            <h2
-              className="rf-heading"
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 'var(--font-size-h3)',
-                marginBottom: '8px',
-              }}
-            >
-              Scaffolding &amp; Services
-            </h2>
-            <p
-              data-testid="status-message"
-              style={{
-                fontSize: 'var(--font-size-base)',
-                marginBottom: '14px',
-                color: 'var(--color-ink-soft)',
-              }}
-            >
-              {status}
-            </p>
-            {demoLoaded && (
-              <div style={{ marginBottom: '14px' }}>
-                <Badge status="fresh" data-testid="demo-badge">
-                  Demo account ready
-                </Badge>
-              </div>
-            )}
-          </Card>
-
-          <Card>
-            <form onSubmit={handleAddItem}>
-              <Input
-                label="Quick item search"
-                placeholder="milk, tomatoes, рис..."
-                value={inputValue}
-                onChange={(e) => {
-                  setInputValue(e.target.value);
-                  if (inputError) setInputError('');
-                  if (apiError) setApiError('');
+          <div className="rf-grid-dashboard-top">
+            <Card>
+              <h2
+                className="rf-heading"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'var(--font-size-h3)',
+                  marginBottom: '8px',
                 }}
-                error={inputError || apiError}
-                helperText="Type ingredients to check availability"
-              />
-              <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                <Button
-                  type="submit"
-                  variant="default"
-                  fullWidth
-                  disabled={isAdding}
-                  onClick={handleAddItem}
-                >
-                  {isAdding ? 'Adding item...' : 'Add item'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outlined"
-                  disabled={isAdding}
-                  onClick={handleCancel}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </Card>
+              >
+                Scaffolding &amp; Services
+              </h2>
+              <p
+                data-testid="status-message"
+                style={{
+                  fontSize: 'var(--font-size-base)',
+                  marginBottom: '14px',
+                  color: 'var(--color-ink-soft)',
+                }}
+              >
+                {status}
+              </p>
+              {demoLoaded && (
+                <div style={{ marginBottom: '14px' }}>
+                  <Badge status="fresh" data-testid="demo-badge">
+                    Demo account ready
+                  </Badge>
+                </div>
+              )}
+            </Card>
+
+            <Card>
+              <form onSubmit={handleAddItem}>
+                <Input
+                  label="Quick item search"
+                  placeholder="milk, tomatoes, рис..."
+                  value={inputValue}
+                  onChange={(e) => {
+                    setInputValue(e.target.value);
+                    if (inputError) setInputError('');
+                    if (apiError) setApiError('');
+                  }}
+                  error={inputError || apiError}
+                  helperText="Type ingredients to check availability"
+                />
+                <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                  <Button
+                    type="submit"
+                    variant="default"
+                    fullWidth
+                    disabled={isAdding}
+                    onClick={handleAddItem}
+                  >
+                    {isAdding ? 'Adding item...' : 'Add item'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    disabled={isAdding}
+                    onClick={handleCancel}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          </div>
 
           {pantryDeleteError && (
             <p
@@ -399,7 +401,7 @@ export const AppContent: React.FC = () => {
               >
                 Pantry inventory ({pantryItems.length})
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className="rf-grid-pantry">
                 {pantryItems.map((item) => {
                   const itemName =
                     item.custom_name ||
@@ -412,14 +414,16 @@ export const AppContent: React.FC = () => {
                     <div
                       key={item.id}
                       data-testid={`pantry-item-${item.id}`}
+                      className="rf-pantry-card"
                       style={{
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        padding: '8px 12px',
+                        padding: '12px 14px',
                         borderRadius: 'var(--radius-card)',
-                        border: '1px solid var(--color-ink)',
+                        border: '1.5px solid var(--color-ink)',
                         backgroundColor: 'var(--color-paper)',
+                        boxShadow: '2px 2px 0 var(--color-ink)',
                       }}
                     >
                       <div>
@@ -486,17 +490,20 @@ export const AppContent: React.FC = () => {
 
       {activeTab === 'matches' && (
         <Card>
-          <h2
-            className="rf-heading"
-            style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--font-size-h3)', marginBottom: '8px' }}
-          >
-            Matches ({recipes.length})
-          </h2>
-          <p style={{ color: 'var(--color-ink-soft)', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <h2
+              className="rf-heading"
+              style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--font-size-h3)' }}
+            >
+              Matches ({recipes.length})
+            </h2>
+            <Badge status="fresh">{recipes.length} available</Badge>
+          </div>
+          <p style={{ color: 'var(--color-ink-soft)', marginBottom: '16px' }}>
             Recipe matches based on your pantry.
           </p>
           {recipes.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="rf-grid-recipes">
               {recipes.map((r) => (
                 <div
                   key={r.id}
@@ -511,17 +518,33 @@ export const AppContent: React.FC = () => {
                       setSelectedRecipeId(r.id);
                     }
                   }}
+                  className="rf-recipe-card"
                   style={{
-                    padding: '10px 12px',
+                    padding: '16px',
                     borderRadius: 'var(--radius-card)',
-                    border: '1px solid var(--color-ink)',
+                    border: '1.5px solid var(--color-ink)',
                     backgroundColor: 'var(--color-paper)',
+                    boxShadow: '3px 3px 0 var(--color-ink)',
                     cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    minHeight: '110px',
+                    boxSizing: 'border-box',
                   }}
                 >
-                  <div style={{ fontWeight: 600, fontSize: 'var(--font-size-base)' }}>{r.title}</div>
-                  <div style={{ color: 'var(--color-ink-soft)', fontSize: 'var(--font-size-sm)' }}>
-                    {r.time_minutes} mins · {r.servings} servings · {r.ingredients.length} ingredients
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 'var(--font-size-base)', marginBottom: '6px' }}>
+                      {r.title}
+                    </div>
+                    <div style={{ color: 'var(--color-ink-soft)', fontSize: 'var(--font-size-sm)' }}>
+                      ⏱️ {r.time_minutes} mins · 👥 {r.servings} servings · 🥗 {r.ingredients.length} ingredients
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+                    <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, color: 'var(--color-paprika)' }}>
+                      View recipe &rarr;
+                    </span>
                   </div>
                 </div>
               ))}
@@ -534,13 +557,18 @@ export const AppContent: React.FC = () => {
 
       {activeTab === 'shopping' && (
         <Card>
-          <h2
-            className="rf-heading"
-            style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--font-size-h3)', marginBottom: '8px' }}
-          >
-            Shopping List ({shoppingItems.length})
-          </h2>
-          <p style={{ color: 'var(--color-ink-soft)', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <h2
+              className="rf-heading"
+              style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--font-size-h3)' }}
+            >
+              Shopping List ({shoppingItems.length})
+            </h2>
+            <Badge status={shoppingItems.length > 0 ? "expiring_soon" : "fresh"}>
+              {shoppingItems.length} items
+            </Badge>
+          </div>
+          <p style={{ color: 'var(--color-ink-soft)', marginBottom: '16px' }}>
             Budget shopping list for missing ingredients.
           </p>
 
@@ -560,7 +588,7 @@ export const AppContent: React.FC = () => {
           )}
 
           {shoppingItems.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="rf-grid-shopping">
               {shoppingItems.map((s) => {
                 const itemName =
                   s.custom_name ||
@@ -573,14 +601,16 @@ export const AppContent: React.FC = () => {
                   <div
                     key={s.id}
                     data-testid={`shopping-item-${s.id}`}
+                    className="rf-shopping-card"
                     style={{
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      padding: '8px 12px',
+                      padding: '12px 14px',
                       borderRadius: 'var(--radius-card)',
-                      border: '1px solid var(--color-ink)',
+                      border: '1.5px solid var(--color-ink)',
                       backgroundColor: 'var(--color-paper)',
+                      boxShadow: '2px 2px 0 var(--color-ink)',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

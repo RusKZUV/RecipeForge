@@ -30,9 +30,9 @@ export const TOKENS = {
     minTouchTarget: '44px',
   },
   spacing: {
-    pageX: '18px',
-    gapCards: '12px',
-    layoutMaxWidth: '480px',
+    pageX: '24px',
+    gapCards: '16px',
+    layoutMaxWidth: '1280px',
   },
 } as const;
 

@@ -1,6 +1,7 @@
 import React from 'react';
-import { BottomNav, TabId } from './BottomNav';
+import { TabId } from './BottomNav';
 import { TopNav } from './TopNav';
+import { SidebarNav } from './SidebarNav';
 
 export interface LayoutProps {
   children?: React.ReactNode;
@@ -26,47 +27,63 @@ export const Layout: React.FC<LayoutProps> = ({
         minHeight: '100vh',
         backgroundColor: 'var(--color-paper)',
         color: 'var(--color-ink)',
-        display: 'flex',
-        flexDirection: 'column',
+        overflowX: 'hidden',
         alignItems: 'center',
         width: '100%',
         boxSizing: 'border-box',
-        overflowX: 'hidden',
       }}
     >
-      {showTopNav && <TopNav onLoginClick={onLoginClick} />}
-      <div
-        className="rf-layout__container"
+      {showNav && (
+        <SidebarNav
+          activeTab={activeTab}
+          onTabChange={onTabChange}
+          onLoginClick={onLoginClick}
+        />
+      )}
+
+      <main
+        className="rf-main-content"
         style={{
-          width: '100%',
-          maxWidth: 'var(--layout-max-width)',
-          padding: '18px var(--space-page-x) 80px var(--space-page-x)',
+          flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          gap: 'var(--gap-cards)',
-          boxSizing: 'border-box',
+          alignItems: 'center',
           minWidth: 0,
+          width: '100%',
+          boxSizing: 'border-box',
         }}
       >
-        {children}
+        {showTopNav && <TopNav onLoginClick={onLoginClick} />}
 
-        <footer
-          className="rf-legal-note"
+        <div
+          className="rf-layout__container"
           style={{
-            marginTop: 'auto',
-            paddingTop: '16px',
-            fontSize: 'var(--font-size-legal)',
-            color: 'var(--color-ink-soft)',
-            textAlign: 'center',
+            width: '100%',
+            maxWidth: 'var(--layout-max-width)',
+            padding: '18px var(--space-page-x) 80px var(--space-page-x)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--gap-cards)',
+            boxSizing: 'border-box',
+            minWidth: 0,
           }}
         >
-          Dates are user estimates. The app never says an item is safe to eat.
-        </footer>
-      </div>
+          {children}
 
-      {showNav && (
-        <BottomNav activeTab={activeTab} onTabChange={onTabChange} />
-      )}
+          <footer
+            className="rf-legal-note"
+            style={{
+              marginTop: 'auto',
+              paddingTop: '24px',
+              fontSize: 'var(--font-size-legal)',
+              color: 'var(--color-ink-soft)',
+              textAlign: 'center',
+            }}
+          >
+            Dates are user estimates. The app never says an item is safe to eat.
+          </footer>
+        </div>
+      </main>
     </div>
   );
 };

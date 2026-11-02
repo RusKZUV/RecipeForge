@@ -7,3 +7,7 @@ __pycache__/
 *.sqlite
 .env
 .DS_Store
+
+# Playwright
+frontend/test-results/
+frontend/playwright-report/
