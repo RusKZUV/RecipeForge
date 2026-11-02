@@ -13,6 +13,8 @@ export const DEMO_USER: User = {
   id: DEMO_USER_ID,
   email: DEMO_USER_EMAIL,
   default_servings: 1,
+  avatar_url: '👨‍🍳',
+  max_budget: 15000,
   dietary_filters: [],
   equipment: ['stovetop', 'microwave'],
   assumed_staples: {

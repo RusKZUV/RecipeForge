@@ -19,6 +19,8 @@ class UserProfile(BaseModel):
     equipment: List[str] = Field(default_factory=list)
     default_servings: int = 1
     assumed_staples: Dict[str, bool] = Field(default_factory=lambda: {"pepper": True, "oil": True})
+    avatar_url: Optional[str] = None
+    max_budget: Optional[int] = None
 
 
 class UserResponse(BaseModel):
@@ -28,6 +30,8 @@ class UserResponse(BaseModel):
     dietary_filters: List[str] = Field(default_factory=list)
     equipment: List[str] = Field(default_factory=list)
     assumed_staples: Dict[str, bool] = Field(default_factory=lambda: {"pepper": True, "oil": True})
+    avatar_url: Optional[str] = None
+    max_budget: Optional[int] = None
     created_at: str
 
 
@@ -52,6 +56,8 @@ class ProfileUpdateRequest(BaseModel):
     equipment: Optional[List[str]] = None
     default_servings: Optional[int] = None
     assumed_staples: Optional[Dict[str, bool]] = None
+    avatar_url: Optional[str] = None
+    max_budget: Optional[int] = None
 
 
 class IngredientResponse(BaseModel):

@@ -16,6 +16,8 @@ export interface Profile {
   equipment: string[];
   default_servings: number;
   assumed_staples: AssumedStaplesProfile;
+  avatar_url?: string | null;
+  max_budget?: number | null;
 }
 
 export interface User {
@@ -25,6 +27,8 @@ export interface User {
   dietary_filters: DietaryFilter[];
   equipment: string[];
   assumed_staples: AssumedStaplesProfile;
+  avatar_url?: string | null;
+  max_budget?: number | null;
   created_at: string;
 }
 

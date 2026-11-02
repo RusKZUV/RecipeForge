@@ -29,6 +29,8 @@ def build_user_response(user: User) -> UserResponse:
         dietary_filters=user.dietary_filters,
         equipment=user.equipment,
         assumed_staples=user.assumed_staples,
+        avatar_url=user.avatar_url,
+        max_budget=user.max_budget,
         created_at=user.created_at.isoformat() if hasattr(user.created_at, "isoformat") else str(user.created_at),
     )
 
@@ -115,6 +117,8 @@ def demo_login(db: Session = Depends(get_db)):
             email=DEMO_USER_EMAIL,
             password_hash=hash_password("demopassword"),
             default_servings=1,
+            avatar_url="👨‍🍳",
+            max_budget=15000,
             dietary_filters_json="[]",
             equipment_json='["stovetop", "microwave"]',
             assumed_staples_json='{"pepper": true, "oil": true}',
@@ -173,6 +177,12 @@ def update_profile(
 
     if req.assumed_staples is not None:
         user.assumed_staples = req.assumed_staples
+
+    if req.avatar_url is not None:
+        user.avatar_url = req.avatar_url
+
+    if req.max_budget is not None:
+        user.max_budget = req.max_budget
 
     db.commit()
     db.refresh(user)

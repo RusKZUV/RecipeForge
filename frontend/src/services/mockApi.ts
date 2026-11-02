@@ -311,6 +311,12 @@ export class MockApiService implements ApiService {
         ...profile.assumed_staples,
       };
     }
+    if (profile.avatar_url !== undefined) {
+      userRecord.user.avatar_url = profile.avatar_url;
+    }
+    if (profile.max_budget !== undefined) {
+      userRecord.user.max_budget = profile.max_budget;
+    }
 
     return JSON.parse(JSON.stringify(userRecord.user));
   }

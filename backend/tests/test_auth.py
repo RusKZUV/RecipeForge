@@ -33,12 +33,19 @@ def test_register_and_login_flow(client):
     # Update profile
     patch_resp = client.patch(
         "/auth/profile",
-        json={"default_servings": 3, "dietary_filters": ["vegetarian"]},
+        json={
+            "default_servings": 3,
+            "dietary_filters": ["vegetarian"],
+            "avatar_url": "🥗",
+            "max_budget": 20000,
+        },
         headers={"Authorization": f"Bearer {token}"},
     )
     assert patch_resp.status_code == 200
     assert patch_resp.json()["default_servings"] == 3
     assert "vegetarian" in patch_resp.json()["dietary_filters"]
+    assert patch_resp.json()["avatar_url"] == "🥗"
+    assert patch_resp.json()["max_budget"] == 20000
 
     # Delete account
     del_resp = client.delete("/auth/account", headers={"Authorization": f"Bearer {token}"})

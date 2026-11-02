@@ -148,4 +148,36 @@ test.describe('Desktop Multi-Column Web Application Layout', () => {
     await page.getByTestId('sidebar-tab-shopping').click();
     await expect(page.getByRole('heading', { name: /shopping list/i })).toBeVisible();
   });
+
+  test('displays enhanced profile view with avatar, budget limit, and statistics dashboard', async ({ page }) => {
+    // Navigate to Profile via sidebar
+    await page.getByTestId('sidebar-tab-profile').click();
+    await expect(page.getByRole('heading', { name: /kitchen profile/i })).toBeVisible();
+
+    // Verify avatar elements (in top nav, sidebar, and profile preview)
+    await expect(page.getByTestId('top-nav-avatar')).toBeVisible();
+    await expect(page.getByTestId('sidebar-avatar')).toBeVisible();
+    await expect(page.getByTestId('profile-avatar-preview')).toBeVisible();
+
+    // Verify "My Stats" block
+    await expect(page.getByTestId('stats-recipes-cooked')).toBeVisible();
+    await expect(page.getByTestId('stats-items-used')).toBeVisible();
+    await expect(page.getByTestId('stats-money-saved')).toBeVisible();
+
+    // Verify Weekly Budget field
+    const budgetInput = page.getByTestId('profile-max-budget-input');
+    await expect(budgetInput).toBeVisible();
+
+    // Select a predefined emoji avatar
+    const pizzaOption = page.getByTestId('avatar-option-🍕');
+    await expect(pizzaOption).toBeVisible();
+    await pizzaOption.click();
+
+    // Update budget limit
+    await budgetInput.fill('25000');
+
+    // Save profile changes
+    await page.getByTestId('save-profile-button').click();
+    await expect(page.getByTestId('save-success-banner')).toBeVisible();
+  });
 });

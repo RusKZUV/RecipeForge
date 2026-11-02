@@ -80,11 +80,40 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       <div className="rf-sidebar__footer">
         {user ? (
           <div className="rf-sidebar__user-card">
-            <div className="rf-sidebar__user-info">
-              <span className="rf-sidebar__user-badge">Active Session</span>
-              <span className="rf-sidebar__user-email" title={user.email}>
-                {user.email}
-              </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div
+                data-testid="sidebar-avatar"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  border: '1.5px solid var(--color-ink)',
+                  backgroundColor: 'var(--color-paper-warm, #EAE0D0)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  fontSize: '18px',
+                  lineHeight: 1,
+                  flexShrink: 0,
+                }}
+              >
+                {user.avatar_url && (user.avatar_url.startsWith('data:') || user.avatar_url.startsWith('http')) ? (
+                  <img
+                    src={user.avatar_url}
+                    alt="Avatar"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <span>{user.avatar_url || '🧑‍🍳'}</span>
+                )}
+              </div>
+              <div className="rf-sidebar__user-info">
+                <span className="rf-sidebar__user-badge">Active Session</span>
+                <span className="rf-sidebar__user-email" title={user.email}>
+                  {user.email}
+                </span>
+              </div>
             </div>
             <button
               type="button"

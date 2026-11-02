@@ -58,7 +58,7 @@ export const TopNav: React.FC<TopNavProps> = ({ onLoginClick }) => {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         {user ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span
               style={{
                 fontSize: 'var(--font-size-sm)',
@@ -72,6 +72,34 @@ export const TopNav: React.FC<TopNavProps> = ({ onLoginClick }) => {
             >
               {user.email}
             </span>
+            <div
+              data-testid="top-nav-avatar"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                border: '1.5px solid var(--color-ink)',
+                backgroundColor: 'var(--color-paper-warm, #EAE0D0)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                fontSize: '18px',
+                lineHeight: 1,
+                flexShrink: 0,
+              }}
+              title="User Avatar"
+            >
+              {user.avatar_url && (user.avatar_url.startsWith('data:') || user.avatar_url.startsWith('http')) ? (
+                <img
+                  src={user.avatar_url}
+                  alt="Avatar"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <span>{user.avatar_url || '🧑‍🍳'}</span>
+              )}
+            </div>
             <button
               type="button"
               onClick={() => logout()}

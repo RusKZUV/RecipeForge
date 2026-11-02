@@ -26,6 +26,8 @@ class User(Base):
     dietary_filters_json = Column(Text, default="[]", nullable=False)
     equipment_json = Column(Text, default="[]", nullable=False)
     assumed_staples_json = Column(Text, default='{"pepper": true, "oil": true}', nullable=False)
+    avatar_url = Column(Text, nullable=True)
+    max_budget = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     tokens = relationship("UserToken", back_populates="user", cascade="all, delete-orphan")

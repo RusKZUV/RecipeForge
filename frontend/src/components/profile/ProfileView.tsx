@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { DietaryFilter } from '../../types';
 import { Card } from '../ui/Card';
@@ -15,9 +15,13 @@ const DIETARY_OPTIONS: { id: DietaryFilter; label: string }[] = [
 
 const STANDARD_EQUIPMENT: string[] = ['stovetop', 'microwave', 'oven', 'blender'];
 
+const PREDEFINED_AVATARS = ['👨‍🍳', '👩‍🍳', '🧑‍🍳', '🍳', '🥗', '🍲', '🥑', '🍕', '🍰', '🍜'];
+
 export const ProfileView: React.FC = () => {
   const { user, updateProfile, logout, deleteAccount, formDrafts, setFormDraft, clearFormDraft } =
     useAuth();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [dietaryFilters, setDietaryFilters] = useState<DietaryFilter[]>(() => {
     if (formDrafts.profileDraft?.dietary_filters) return formDrafts.profileDraft.dietary_filters;
@@ -42,6 +46,35 @@ export const ProfileView: React.FC = () => {
     };
   });
 
+  const [avatarUrl, setAvatarUrl] = useState<string>(() => {
+    return user?.avatar_url || '👨‍🍳';
+  });
+
+  const [maxBudget, setMaxBudget] = useState<string>(() => {
+    if (user?.max_budget !== undefined && user?.max_budget !== null) {
+      return String(user.max_budget);
+    }
+    return '15000';
+  });
+
+  const [recipesCooked] = useState<number>(() => {
+    try {
+      const val = localStorage.getItem(`recipeforge_recipes_cooked_${user?.id || 'demo'}`);
+      return val ? parseInt(val, 10) : 4;
+    } catch {
+      return 4;
+    }
+  });
+
+  const [itemsUsed] = useState<number>(() => {
+    try {
+      const val = localStorage.getItem(`recipeforge_items_used_${user?.id || 'demo'}`);
+      return val ? parseInt(val, 10) : 12;
+    } catch {
+      return 12;
+    }
+  });
+
   const [servingsError, setServingsError] = useState<string | undefined>(undefined);
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -56,8 +89,10 @@ export const ProfileView: React.FC = () => {
       equipment,
       servings,
       assumed_staples: assumedStaples,
+      avatar_url: avatarUrl,
+      max_budget: maxBudget,
     });
-  }, [dietaryFilters, equipment, servings, assumedStaples, setFormDraft]);
+  }, [dietaryFilters, equipment, servings, assumedStaples, avatarUrl, maxBudget, setFormDraft]);
 
   const handleDietaryToggle = (id: DietaryFilter) => {
     setSaveSuccess(false);
@@ -104,6 +139,25 @@ export const ProfileView: React.FC = () => {
     validateServings(val);
   };
 
+  const handleAvatarSelect = (emoji: string) => {
+    setAvatarUrl(emoji);
+    setSaveSuccess(false);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setAvatarUrl(reader.result);
+          setSaveSuccess(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateServings(servings)) return;
@@ -113,11 +167,14 @@ export const ProfileView: React.FC = () => {
     setSaveSuccess(false);
 
     try {
+      const parsedBudget = maxBudget.trim() ? parseInt(maxBudget.trim(), 10) : null;
       await updateProfile({
         dietary_filters: dietaryFilters,
         equipment,
         default_servings: parseInt(servings, 10),
         assumed_staples: assumedStaples,
+        avatar_url: avatarUrl,
+        max_budget: parsedBudget,
       });
       clearFormDraft('profileDraft');
       setSaveSuccess(true);
@@ -140,8 +197,11 @@ export const ProfileView: React.FC = () => {
     }
   };
 
+  // Mock estimated savings: 850 KZT per item used
+  const moneySaved = itemsUsed * 850;
+
   return (
-    <div className="rf-profile-view" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+    <div className="rf-profile-view" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <header>
         <h1
           className="rf-heading"
@@ -214,240 +274,455 @@ export const ProfileView: React.FC = () => {
         </div>
       )}
 
-      <form onSubmit={handleSave} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        {/* Dietary Filters */}
-        <Card>
-          <h2
-            className="rf-heading"
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'var(--font-size-h3)',
-              marginBottom: '10px',
-            }}
-          >
-            Dietary Preferences
-          </h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {DIETARY_OPTIONS.map((opt) => {
-              const active = dietaryFilters.includes(opt.id);
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  data-testid={`dietary-filter-${opt.id}`}
-                  onClick={() => handleDietaryToggle(opt.id)}
+      <form onSubmit={handleSave} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* 2-Column Responsive Layout */}
+        <div className="rf-profile-grid">
+          {/* Left Column: Avatar & Personal Info */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Avatar Card */}
+            <Card>
+              <h2
+                className="rf-heading"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'var(--font-size-h3)',
+                  marginBottom: '12px',
+                }}
+              >
+                User Avatar
+              </h2>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+                <div
+                  data-testid="profile-avatar-preview"
                   style={{
-                    padding: '8px 16px',
-                    borderRadius: 'var(--radius-pill)',
-                    border: 'var(--border-ink)',
-                    backgroundColor: active ? 'var(--color-olive)' : 'var(--color-card)',
-                    color: active ? '#FFFBF2' : 'var(--color-ink)',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 'var(--font-size-sm)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    minHeight: '44px',
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '50%',
+                    border: '2px solid var(--color-ink)',
+                    backgroundColor: 'var(--color-paper-warm, #EAE0D0)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    fontSize: '36px',
+                    lineHeight: 1,
+                    flexShrink: 0,
+                    boxShadow: '2px 2px 0 var(--color-ink)',
                   }}
                 >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </Card>
+                  {avatarUrl && (avatarUrl.startsWith('data:') || avatarUrl.startsWith('http')) ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Avatar Preview"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <span>{avatarUrl || '👨‍🍳'}</span>
+                  )}
+                </div>
 
-        {/* Kitchen Equipment */}
-        <Card>
-          <h2
-            className="rf-heading"
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'var(--font-size-h3)',
-              marginBottom: '10px',
-            }}
-          >
-            Available Equipment
-          </h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {STANDARD_EQUIPMENT.map((item) => {
-              const active = equipment.includes(item);
-              return (
-                <button
-                  key={item}
-                  type="button"
-                  data-testid={`equipment-${item}`}
-                  onClick={() => handleEquipmentToggle(item)}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    data-testid="upload-avatar-input"
+                    style={{ display: 'none' }}
+                    onChange={handleFileUpload}
+                  />
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    data-testid="upload-avatar-button"
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{ fontSize: 'var(--font-size-sm)', padding: '6px 14px', minHeight: '36px' }}
+                  >
+                    Upload Avatar
+                  </Button>
+                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-ink-soft)' }}>
+                    Choose an image or select an icon below
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <span
                   style={{
-                    padding: '8px 16px',
-                    borderRadius: 'var(--radius-pill)',
-                    border: 'var(--border-ink)',
-                    backgroundColor: active ? 'var(--color-ink)' : 'var(--color-card)',
-                    color: active ? 'var(--color-card)' : 'var(--color-ink)',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 'var(--font-size-sm)',
+                    display: 'block',
+                    fontSize: 'var(--font-size-xs)',
                     fontWeight: 600,
-                    cursor: 'pointer',
-                    minHeight: '44px',
-                    textTransform: 'capitalize',
+                    color: 'var(--color-ink-soft)',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
                   }}
                 >
-                  {item}
-                </button>
-              );
-            })}
-          </div>
-        </Card>
+                  Predefined Icons
+                </span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {PREDEFINED_AVATARS.map((emoji) => {
+                    const isSelected = avatarUrl === emoji;
+                    return (
+                      <button
+                        key={emoji}
+                        type="button"
+                        data-testid={`avatar-option-${emoji}`}
+                        onClick={() => handleAvatarSelect(emoji)}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          border: isSelected ? '2px solid var(--color-olive)' : '1px solid var(--color-ink)',
+                          backgroundColor: isSelected ? 'var(--color-olive-bg)' : 'var(--color-card)',
+                          fontSize: '20px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'transform 0.15s ease',
+                          transform: isSelected ? 'scale(1.1)' : 'none',
+                        }}
+                      >
+                        {emoji}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </Card>
 
-        {/* Default Servings */}
-        <Card>
-          <h2
-            className="rf-heading"
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'var(--font-size-h3)',
-              marginBottom: '10px',
-            }}
-          >
-            Default Servings
-          </h2>
-          <Input
-            label="Servings (1 - 12)"
-            type="number"
-            min={1}
-            max={12}
-            step={1}
-            value={servings}
-            onChange={(e) => handleServingsChange(e.target.value)}
-            error={servingsError}
-            helperText="Default portion count for recipes (whole number from 1 to 12)"
-          />
-        </Card>
-
-        {/* Assumed Staples */}
-        <Card>
-          <h2
-            className="rf-heading"
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'var(--font-size-h3)',
-              marginBottom: '10px',
-            }}
-          >
-            Assumed Staples
-          </h2>
-          <p
-            style={{
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-ink-soft)',
-              marginBottom: '12px',
-            }}
-          >
-            Ingredients you always have on hand and don&apos;t need to buy.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                cursor: 'pointer',
-                fontSize: 'var(--font-size-base)',
-              }}
-            >
-              <input
-                type="checkbox"
-                data-testid="staple-pepper"
-                checked={assumedStaples.pepper}
-                onChange={(e) => {
-                  setSaveSuccess(false);
-                  setAssumedStaples({ ...assumedStaples, pepper: e.target.checked });
-                }}
+            {/* Default Servings */}
+            <Card>
+              <h2
+                className="rf-heading"
                 style={{
-                  width: '20px',
-                  height: '20px',
-                  accentColor: 'var(--color-ink)',
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'var(--font-size-h3)',
+                  marginBottom: '10px',
                 }}
+              >
+                Default Servings
+              </h2>
+              <Input
+                label="Servings (1 - 12)"
+                type="number"
+                min={1}
+                max={12}
+                step={1}
+                value={servings}
+                onChange={(e) => handleServingsChange(e.target.value)}
+                error={servingsError}
+                helperText="Default portion count for recipes (whole number from 1 to 12)"
               />
-              <span>Black pepper</span>
-            </label>
+            </Card>
 
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                cursor: 'pointer',
-                fontSize: 'var(--font-size-base)',
-              }}
-            >
-              <input
-                type="checkbox"
-                data-testid="staple-oil"
-                checked={assumedStaples.oil}
-                onChange={(e) => {
-                  setSaveSuccess(false);
-                  setAssumedStaples({ ...assumedStaples, oil: e.target.checked });
-                }}
+            {/* Assumed Staples */}
+            <Card>
+              <h2
+                className="rf-heading"
                 style={{
-                  width: '20px',
-                  height: '20px',
-                  accentColor: 'var(--color-ink)',
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'var(--font-size-h3)',
+                  marginBottom: '10px',
                 }}
-              />
-              <span>Cooking oil</span>
-            </label>
+              >
+                Assumed Staples
+              </h2>
+              <p
+                style={{
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-ink-soft)',
+                  marginBottom: '12px',
+                }}
+              >
+                Ingredients you always have on hand and don&apos;t need to buy.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    cursor: 'pointer',
+                    fontSize: 'var(--font-size-base)',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    data-testid="staple-pepper"
+                    checked={assumedStaples.pepper}
+                    onChange={(e) => {
+                      setSaveSuccess(false);
+                      setAssumedStaples({ ...assumedStaples, pepper: e.target.checked });
+                    }}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      accentColor: 'var(--color-ink)',
+                    }}
+                  />
+                  <span>Black pepper</span>
+                </label>
+
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    cursor: 'pointer',
+                    fontSize: 'var(--font-size-base)',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    data-testid="staple-oil"
+                    checked={assumedStaples.oil}
+                    onChange={(e) => {
+                      setSaveSuccess(false);
+                      setAssumedStaples({ ...assumedStaples, oil: e.target.checked });
+                    }}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      accentColor: 'var(--color-ink)',
+                    }}
+                  />
+                  <span>Cooking oil</span>
+                </label>
+              </div>
+            </Card>
+
+            {/* Account Actions */}
+            <Card>
+              <h2
+                className="rf-heading"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'var(--font-size-h3)',
+                  marginBottom: '12px',
+                }}
+              >
+                Account Settings
+              </h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <Button
+                  type="button"
+                  variant="outlined"
+                  fullWidth
+                  onClick={() => logout()}
+                  data-testid="logout-button"
+                >
+                  Log out
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outlined"
+                  fullWidth
+                  onClick={() => setShowDeleteModal(true)}
+                  data-testid="delete-account-button"
+                  style={{
+                    color: 'var(--color-paprika)',
+                    borderColor: 'var(--color-paprika)',
+                  }}
+                >
+                  Delete Account
+                </Button>
+              </div>
+            </Card>
           </div>
-        </Card>
 
-        <Button
-          type="submit"
-          variant="default"
-          fullWidth
-          disabled={isSaving}
-          data-testid="save-profile-button"
-        >
-          {isSaving ? 'Saving profile...' : 'Save profile'}
-        </Button>
-      </form>
+          {/* Right Column: Budget & Stats */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* My Stats Card */}
+            <Card>
+              <h2
+                className="rf-heading"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'var(--font-size-h3)',
+                  marginBottom: '4px',
+                }}
+              >
+                My Stats
+              </h2>
+              <p
+                style={{
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-ink-soft)',
+                  marginBottom: '14px',
+                }}
+              >
+                Track your kitchen activity, dorm savings, and pantry sustainability
+              </p>
 
-      {/* Account actions: Logout & Delete */}
-      <Card style={{ marginTop: '12px' }}>
-        <h2
-          className="rf-heading"
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'var(--font-size-h3)',
-            marginBottom: '12px',
-          }}
-        >
-          Account Actions
-        </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div className="rf-stats-grid">
+                <div className="rf-stat-card">
+                  <span className="rf-stat-value" data-testid="stats-recipes-cooked">
+                    {recipesCooked}
+                  </span>
+                  <span className="rf-stat-label">Recipes Cooked</span>
+                </div>
+
+                <div className="rf-stat-card">
+                  <span className="rf-stat-value" data-testid="stats-items-used">
+                    {itemsUsed}
+                  </span>
+                  <span className="rf-stat-label">Items Used</span>
+                </div>
+
+                <div className="rf-stat-card">
+                  <span className="rf-stat-value" data-testid="stats-money-saved">
+                    {moneySaved.toLocaleString()} ₸
+                  </span>
+                  <span className="rf-stat-label">Money Saved</span>
+                </div>
+              </div>
+            </Card>
+
+            {/* Weekly Budget Limit Card */}
+            <Card>
+              <h2
+                className="rf-heading"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'var(--font-size-h3)',
+                  marginBottom: '8px',
+                }}
+              >
+                Budget Limit
+              </h2>
+              <p
+                style={{
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-ink-soft)',
+                  marginBottom: '14px',
+                }}
+              >
+                Set your target weekly grocery spend to optimize recipe matches and stay on budget.
+              </p>
+
+              <Input
+                label="Weekly Budget Limit (KZT)"
+                type="number"
+                min={0}
+                step={500}
+                value={maxBudget}
+                onChange={(e) => {
+                  setMaxBudget(e.target.value);
+                  setSaveSuccess(false);
+                }}
+                data-testid="profile-max-budget-input"
+                placeholder="e.g. 15000"
+                helperText="Stored in integer Kazakhstani Tenge (KZT ₸)"
+              />
+            </Card>
+
+            {/* Dietary Filters */}
+            <Card>
+              <h2
+                className="rf-heading"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'var(--font-size-h3)',
+                  marginBottom: '10px',
+                }}
+              >
+                Dietary Preferences
+              </h2>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {DIETARY_OPTIONS.map((opt) => {
+                  const active = dietaryFilters.includes(opt.id);
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      data-testid={`dietary-filter-${opt.id}`}
+                      onClick={() => handleDietaryToggle(opt.id)}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: 'var(--radius-pill)',
+                        border: 'var(--border-ink)',
+                        backgroundColor: active ? 'var(--color-olive)' : 'var(--color-card)',
+                        color: active ? '#FFFBF2' : 'var(--color-ink)',
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 'var(--font-size-sm)',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        minHeight: '44px',
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </Card>
+
+            {/* Kitchen Equipment */}
+            <Card>
+              <h2
+                className="rf-heading"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'var(--font-size-h3)',
+                  marginBottom: '10px',
+                }}
+              >
+                Available Equipment
+              </h2>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {STANDARD_EQUIPMENT.map((item) => {
+                  const active = equipment.includes(item);
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      data-testid={`equipment-${item}`}
+                      onClick={() => handleEquipmentToggle(item)}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: 'var(--radius-pill)',
+                        border: 'var(--border-ink)',
+                        backgroundColor: active ? 'var(--color-ink)' : 'var(--color-card)',
+                        color: active ? 'var(--color-card)' : 'var(--color-ink)',
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 'var(--font-size-sm)',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        minHeight: '44px',
+                        textTransform: 'capitalize',
+                      }}
+                    >
+                      {item}
+                    </button>
+                  );
+                })}
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <div style={{ marginTop: '8px' }}>
           <Button
-            type="button"
-            variant="outlined"
+            type="submit"
+            variant="default"
             fullWidth
-            onClick={() => logout()}
-            data-testid="logout-button"
-          >
-            Log out
-          </Button>
-
-          <Button
-            type="button"
-            variant="outlined"
-            fullWidth
-            onClick={() => setShowDeleteModal(true)}
-            data-testid="delete-account-button"
+            disabled={isSaving}
+            data-testid="save-profile-button"
             style={{
-              borderColor: 'var(--color-paprika)',
-              color: 'var(--color-paprika)',
+              backgroundColor: 'var(--color-ink)',
+              color: 'var(--color-card)',
+              fontSize: 'var(--font-size-base)',
+              padding: '14px 20px',
             }}
           >
-            Delete account
+            {isSaving ? 'Saving Changes...' : 'Save Profile Changes'}
           </Button>
         </div>
-      </Card>
+      </form>
 
       {/* Explicit Confirmation Dialog for Delete Account */}
       {showDeleteModal && (

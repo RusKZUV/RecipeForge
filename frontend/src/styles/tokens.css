@@ -81,7 +81,16 @@ body {
   cursor: pointer;
   box-sizing: border-box;
   text-decoration: none;
-  transition: opacity 0.15s ease, background-color 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rf-button:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 10px rgba(43, 33, 24, 0.14);
+}
+
+.rf-button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .rf-button--default {
@@ -534,4 +543,62 @@ body {
   font-family: var(--font-body);
   font-size: var(--font-size-legal);
   color: var(--color-ink-soft);
+}
+
+/* Profile 2-column Layout & Stats */
+.rf-profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .rf-profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rf-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .rf-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rf-stat-card {
+  background-color: var(--color-paper);
+  border: 1.5px solid var(--color-ink);
+  border-radius: var(--radius-card);
+  padding: 12px 14px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rf-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 2px 2px 0 var(--color-ink);
+}
+
+.rf-stat-value {
+  font-family: var(--font-display);
+  font-size: var(--font-size-h2);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.rf-stat-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
 }

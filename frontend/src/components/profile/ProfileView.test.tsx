@@ -171,6 +171,36 @@ describe('ProfileView Component', () => {
     });
   });
 
+  it('renders stats dashboard and allows selecting avatar and changing weekly budget', async () => {
+    await renderProfileWithAuth();
+
+    // Verify stats are visible
+    expect(screen.getByTestId('stats-recipes-cooked')).toBeInTheDocument();
+    expect(screen.getByTestId('stats-items-used')).toBeInTheDocument();
+    expect(screen.getByTestId('stats-money-saved')).toBeInTheDocument();
+
+    // Avatar preview exists
+    const avatarPreview = screen.getByTestId('profile-avatar-preview');
+    expect(avatarPreview).toBeInTheDocument();
+
+    // Select different avatar emoji
+    const pizzaAvatar = screen.getByTestId('avatar-option-🍕');
+    fireEvent.click(pizzaAvatar);
+    expect(avatarPreview).toHaveTextContent('🍕');
+
+    // Change weekly budget
+    const budgetInput = screen.getByTestId('profile-max-budget-input');
+    fireEvent.change(budgetInput, { target: { value: '20000' } });
+
+    // Save profile
+    const saveBtn = screen.getByTestId('save-profile-button');
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('save-success-banner')).toBeInTheDocument();
+    });
+  });
+
   it('logs out and clears session when clicking logout', async () => {
     let currentUser: any = null;
 
