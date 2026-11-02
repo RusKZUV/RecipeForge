@@ -187,3 +187,9 @@ Major milestones and historical agent actions:
     - Completely upgraded `README.md` to top-tier GitHub standards.
     - Verified all test suites passing: **107 frontend tests** (`npm test`), **15 backend tests** (`uv run pytest`).
     - Successfully closed all 34 GitHub issues with verified `## QA: PASS` comments.
+
+11. **Deployment Phase Part 3 (#35, #36, #37)**:
+    - **Multi-stage Dockerfile (#35)**: Created production multi-stage build (`node:20-alpine` frontend builder + `python:3.12-slim` runner) serving React SPA static files via FastAPI with SPA fallback.
+    - **PostgreSQL Support (#36)**: Added `psycopg2-binary`, configured `backend/app/database.py` with dynamic `DATABASE_URL` parsing, scheme normalization, and connection health pinging.
+    - **Docker Compose Orchestration (#37)**: Created `docker-compose.yaml` linking `db` (`postgres:16-alpine` with healthcheck) and `app` on port 8000 with persistent data volume `postgres_data`.
+    - **Full QA Verification**: Verified all 107 frontend tests, 17 backend tests, and seed integrity; closed issues #35, #36, and #37 with `## QA: PASS`.
