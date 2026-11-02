@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from app.database import Base, engine, SessionLocal
+from app.migrate import run_migrations
 from app.seed import seed_database
 from app.routers import (
     auth_router,
@@ -20,8 +21,10 @@ from app.routers import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialize database tables and seed initial catalog and recipes
+    # Initialize database tables
     Base.metadata.create_all(bind=engine)
+    # Apply safe column migrations on existing tables
+    run_migrations(engine)
     with SessionLocal() as db:
         seed_database(db)
     yield

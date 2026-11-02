@@ -3,6 +3,7 @@ from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 
 from app.database import Base, SessionLocal, engine
+from app.migrate import run_migrations
 from app.models import (
     User,
     Ingredient,
@@ -263,6 +264,7 @@ def seed_database(db: Session = None):
     should_close = False
     if db is None:
         Base.metadata.create_all(bind=engine)
+        run_migrations(engine)
         db = SessionLocal()
         should_close = True
 
