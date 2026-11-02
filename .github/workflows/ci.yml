@@ -32,6 +32,9 @@ jobs:
       - name: Run pytest
         run: uv run pytest -v
 
+      - name: Seed database
+        run: uv run python -m app.seed
+
       - name: Verify seed data integrity
         run: uv run python -m app.seed_check
 

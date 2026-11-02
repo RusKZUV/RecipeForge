@@ -4,13 +4,20 @@ test.describe('Desktop Multi-Column Web Application Layout', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to local Vite dev server
     await page.goto('/');
-    // If on sign-in screen, click 'Try with demo data'
-    const demoBtn = page.getByRole('button', { name: /try with demo data/i });
-    if (await demoBtn.isVisible()) {
-      await demoBtn.click();
+    
+    // In mock API mode, App.tsx auto-authenticates as demo user.
+    // Ensure the status message is visible; if on sign-in screen, click demo login.
+    const statusMessage = page.getByTestId('status-message');
+    const demoBtn = page.getByTestId('demo-login-button');
+
+    try {
+      await expect(statusMessage).toBeVisible({ timeout: 6000 });
+    } catch {
+      if (await demoBtn.isVisible()) {
+        await demoBtn.click({ timeout: 3000 }).catch(() => {});
+      }
+      await expect(statusMessage).toBeVisible({ timeout: 10000 });
     }
-    // Wait for demo account to initialize and status message to be visible
-    await expect(page.getByTestId('status-message')).toBeVisible({ timeout: 10000 });
   });
 
   test('displays desktop multi-column layout with left sidebar and expanded container', async ({ page }) => {
