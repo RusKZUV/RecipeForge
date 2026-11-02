@@ -1,23 +1,59 @@
 import { test, expect } from '@playwright/test';
 
+test.describe('Authentication Screen on Startup', () => {
+  test('displays login screen with demo credentials hint when unauthenticated', async ({ page }) => {
+    // Navigate to local Vite dev server without existing session
+    await page.goto('/');
+
+    // Check that login screen is displayed instead of the main dashboard
+    await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
+    await expect(page.getByLabel(/email/i)).toBeVisible();
+    await expect(page.getByLabel(/password/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /log in/i })).toBeVisible();
+
+    // Verify demo credentials hint
+    await expect(page.getByTestId('demo-credentials-hint')).toBeVisible();
+    await expect(page.getByTestId('demo-credentials-hint')).toContainText('demo@recipeforge.local');
+    await expect(page.getByTestId('demo-credentials-hint')).toContainText("'demo'");
+
+    // Dashboard elements should not be visible
+    await expect(page.locator('aside.rf-sidebar')).not.toBeVisible();
+    await expect(page.getByTestId('status-message')).not.toBeVisible();
+  });
+
+  test('manually fills in login form with demo credentials and logs in', async ({ page }) => {
+    await page.goto('/');
+
+    // Fill in login credentials manually
+    await page.getByLabel(/email/i).fill('demo@recipeforge.local');
+    await page.getByLabel(/password/i).fill('demo');
+    await page.getByRole('button', { name: /log in/i }).click();
+
+    // Verify dashboard and sidebar appear
+    await expect(page.getByTestId('status-message')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('aside.rf-sidebar')).toBeVisible();
+    await expect(page.locator('.rf-sidebar__user-email')).toHaveText('demo@recipeforge.local');
+  });
+});
+
 test.describe('Desktop Multi-Column Web Application Layout', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to local Vite dev server
     await page.goto('/');
-    
-    // In mock API mode, App.tsx auto-authenticates as demo user.
-    // Ensure the status message is visible; if on sign-in screen, click demo login.
-    const statusMessage = page.getByTestId('status-message');
-    const demoBtn = page.getByTestId('demo-login-button');
 
-    try {
-      await expect(statusMessage).toBeVisible({ timeout: 6000 });
-    } catch {
-      if (await demoBtn.isVisible()) {
-        await demoBtn.click({ timeout: 3000 }).catch(() => {});
-      }
-      await expect(statusMessage).toBeVisible({ timeout: 10000 });
+    // When unauthenticated, manually fill in login credentials and submit
+    const emailInput = page.getByLabel(/email/i);
+    const passwordInput = page.getByLabel(/password/i);
+    const loginButton = page.getByRole('button', { name: /log in/i });
+
+    if (await emailInput.isVisible()) {
+      await emailInput.fill('demo@recipeforge.local');
+      await passwordInput.fill('demo');
+      await loginButton.click();
     }
+
+    // Wait for account initialization and status message to be visible
+    await expect(page.getByTestId('status-message')).toBeVisible({ timeout: 10000 });
   });
 
   test('displays desktop multi-column layout with left sidebar and expanded container', async ({ page }) => {

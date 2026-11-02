@@ -32,6 +32,7 @@ import {
 } from './types';
 import {
   DEMO_USER,
+  DEMO_USER_EMAIL,
   DEMO_USER_PASSWORD,
   INITIAL_DEMO_PANTRY,
   INITIAL_RECIPES,
@@ -247,8 +248,13 @@ export class MockApiService implements ApiService {
     const userId = this.emailToUserId.get(email);
     const userRecord = userId ? this.users.get(userId) : undefined;
 
+    const isDemoPassword =
+      userRecord &&
+      userRecord.user.email === DEMO_USER_EMAIL &&
+      (req.password === 'demo' || req.password === DEMO_USER_PASSWORD);
+
     // Return generic error without disclosing whether email or password was incorrect
-    if (!userRecord || userRecord.password !== req.password) {
+    if (!userRecord || (userRecord.password !== req.password && !isDemoPassword)) {
       throw new ApiError(401, 'Invalid email or password', 'INVALID_CREDENTIALS');
     }
 

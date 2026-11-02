@@ -3,19 +3,61 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import App, { resolveIngredient } from './App';
 import { getApiService, resetApiService } from './services';
 
-describe('App & Quick Item Search Integration (#32)', () => {
+describe('App Startup & Authentication Flow', () => {
   beforeEach(() => {
     resetApiService();
     localStorage.clear();
   });
 
+  it('renders Login screen with demo credentials hint when no token exists in localStorage', async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 2, name: /sign in/i })).toBeInTheDocument();
+      expect(screen.getByTestId('login-email-input')).toBeInTheDocument();
+      expect(screen.getByTestId('login-password-input')).toBeInTheDocument();
+      expect(screen.getByTestId('demo-credentials-hint')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument();
+    });
+  });
+
+  it('allows logging in manually with demo credentials and opens the dashboard', async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 2, name: /sign in/i })).toBeInTheDocument();
+    });
+
+    const emailInput = screen.getByLabelText(/email/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+    const loginBtn = screen.getByRole('button', { name: /log in/i });
+
+    fireEvent.change(emailInput, { target: { value: 'demo@recipeforge.local' } });
+    fireEvent.change(passwordInput, { target: { value: 'demo' } });
+    fireEvent.click(loginBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('status-message')).toBeInTheDocument();
+      expect(screen.getByTestId('demo-badge')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('App & Quick Item Search Integration (#32)', () => {
+  beforeEach(async () => {
+    resetApiService();
+    localStorage.clear();
+    const api = getApiService();
+    const auth = await api.auth.loginAsDemo();
+    localStorage.setItem('recipeforge_token', auth.token.access_token);
+  });
+
   it('mounts and renders RecipeForge kitchen notebook header without error', async () => {
     render(<App />);
 
-    expect(screen.getByRole('heading', { level: 1, name: /recipeforge/i })).toBeInTheDocument();
-    expect(screen.getByText(/kitchen notebook/i)).toBeInTheDocument();
-
     await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: /recipeforge/i })).toBeInTheDocument();
+      expect(screen.getAllByText(/kitchen notebook/i)[0]).toBeInTheDocument();
       expect(screen.getByTestId('demo-badge')).toBeInTheDocument();
       expect(screen.getByText(/demo account ready/i)).toBeInTheDocument();
     });
@@ -297,9 +339,12 @@ describe('App & Quick Item Search Integration (#32)', () => {
 });
 
 describe('Matches Tab & Recipe Details Modal Integration (#33)', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     resetApiService();
     localStorage.clear();
+    const api = getApiService();
+    const auth = await api.auth.loginAsDemo();
+    localStorage.setItem('recipeforge_token', auth.token.access_token);
   });
 
   const navigateToMatches = async () => {
@@ -460,9 +505,12 @@ describe('Matches Tab & Recipe Details Modal Integration (#33)', () => {
 });
 
 describe('Pantry Item Deletion & Shopping List Tab Integration (#34)', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     resetApiService();
     localStorage.clear();
+    const api = getApiService();
+    const auth = await api.auth.loginAsDemo();
+    localStorage.setItem('recipeforge_token', auth.token.access_token);
   });
 
   it('deleting a pantry item triggers pantry.deleteItem, decrements count, and removes item from DOM', async () => {

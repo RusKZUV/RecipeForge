@@ -52,3 +52,11 @@ def test_register_and_login_flow(client):
 def test_unauthorized_access(client):
     resp = client.get("/pantry")
     assert resp.status_code == 401
+
+
+def test_demo_user_login(client):
+    # Test demo user login with password 'demo'
+    demo_resp = client.post("/auth/login", json={"email": "demo@recipeforge.local", "password": "demo"})
+    assert demo_resp.status_code == 200
+    assert "access_token" in demo_resp.json()["token"]
+    assert demo_resp.json()["user"]["email"] == "demo@recipeforge.local"

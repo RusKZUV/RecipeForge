@@ -73,7 +73,7 @@ export function resolveIngredient(rawInput: string): CreatePantryItemRequest {
 }
 
 export const AppContent: React.FC = () => {
-  const { user, token, isLoading, loginAsDemo } = useAuth();
+  const { user, token, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>('pantry');
   const [status, setStatus] = useState<string>('Initializing RecipeForge services...');
   const [demoLoaded, setDemoLoaded] = useState<boolean>(false);
@@ -89,16 +89,6 @@ export const AppContent: React.FC = () => {
   const [pantryDeleteError, setPantryDeleteError] = useState<string>('');
   const [deletingShoppingIds, setDeletingShoppingIds] = useState<string[]>([]);
   const [shoppingError, setShoppingError] = useState<string>('');
-
-  // Auto-login demo on initial load if no session exists and user hasn't explicitly logged out
-  useEffect(() => {
-    if (!token && !user && !isLoading) {
-      const loggedOut = localStorage.getItem('recipeforge_logged_out');
-      if (!loggedOut) {
-        loginAsDemo().catch(() => {});
-      }
-    }
-  }, [token, user, isLoading, loginAsDemo]);
 
   useEffect(() => {
     if (user && token) {

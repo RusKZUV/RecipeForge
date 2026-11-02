@@ -112,6 +112,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             onChange={(e) => handleEmailChange(e.target.value)}
             required
             autoComplete="email"
+            data-testid="login-email-input"
           />
 
           <Input
@@ -125,6 +126,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             }}
             required
             autoComplete="current-password"
+            data-testid="login-password-input"
           />
 
           <Button
@@ -133,6 +135,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             fullWidth
             disabled={isSubmitting}
             style={{ marginTop: '8px' }}
+            data-testid="login-submit-button"
           >
             {isSubmitting ? 'Signing in...' : 'Log in'}
           </Button>
@@ -147,6 +150,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           >
             Try with demo data
           </Button>
+
+          <p
+            data-testid="demo-credentials-hint"
+            style={{
+              margin: '4px 0 0 0',
+              fontSize: 'var(--font-size-sm)',
+              color: 'var(--color-ink-soft)',
+              textAlign: 'center',
+            }}
+          >
+            Use <strong>demo@recipeforge.local</strong> with password <strong>'demo'</strong> for testing
+          </p>
         </div>
 
         {onSwitchToRegister && (
