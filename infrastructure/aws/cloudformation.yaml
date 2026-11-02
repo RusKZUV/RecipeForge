@@ -1,0 +1,202 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  RecipeForge Production AWS CloudFormation Template.
+  Provisions a free-tier eligible EC2 instance (t2.micro) running Amazon Linux 2,
+  security group (ports 22, 80, 8000), Docker, Docker Compose, and clones & launches
+  the RecipeForge stack.
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Compute & Network Configuration"
+        Parameters:
+          - InstanceType
+          - KeyName
+      - Label:
+          default: "Application Source Configuration"
+        Parameters:
+          - RepositoryUrl
+          - Branch
+    ParameterLabels:
+      InstanceType:
+        default: "EC2 Instance Type"
+      KeyName:
+        default: "SSH Key Pair"
+      RepositoryUrl:
+        default: "GitHub Repository URL"
+      Branch:
+        default: "Git Branch"
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+      - t3.small
+      - t3.medium
+    Description: EC2 instance type (t2.micro and t3.micro are Free Tier eligible).
+
+  KeyName:
+    Type: String
+    Default: ""
+    Description: "(Optional) Name of an existing EC2 KeyPair to enable SSH access. Leave blank if not required."
+
+  RepositoryUrl:
+    Type: String
+    Default: "https://github.com/RusKZUV/RecipeForge.git"
+    Description: "Git repository URL to clone and deploy."
+
+  Branch:
+    Type: String
+    Default: "main"
+    Description: "Git branch to check out."
+
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+    Description: "Regional SSM parameter path resolving to the latest official Amazon Linux 2 AMI."
+
+Conditions:
+  HasKeyName: !Not [!Equals [!Ref KeyName, ""]]
+
+Resources:
+  # ============================================================================
+  # Security Group (Ports 22 SSH, 80 HTTP, 8000 App)
+  # ============================================================================
+  RecipeForgeSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: "Security Group for RecipeForge Web Application (SSH, HTTP, App)"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          Description: "SSH Remote Access"
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: "Standard HTTP Web Traffic"
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 0.0.0.0/0
+          Description: "RecipeForge Application Port"
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: "Allow all outbound traffic"
+      Tags:
+        - Key: Name
+          Value: RecipeForge-SecurityGroup
+        - Key: Application
+          Value: RecipeForge
+
+  # ============================================================================
+  # EC2 Instance & UserData Provisioning
+  # ============================================================================
+  RecipeForgeInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref LatestAmiId
+      KeyName: !If [HasKeyName, !Ref KeyName, !Ref "AWS::NoValue"]
+      SecurityGroupIds:
+        - !GetAtt RecipeForgeSecurityGroup.GroupId
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 20
+            VolumeType: gp3
+            DeleteOnTermination: true
+      Tags:
+        - Key: Name
+          Value: RecipeForge-Server
+        - Key: Application
+          Value: RecipeForge
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -ex
+
+          # Log all output to /var/log/user-data.log
+          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+          echo "=========================================================="
+          echo "Starting RecipeForge CloudFormation Automated Provisioning"
+          echo "=========================================================="
+
+          # Step 1: Update base system packages
+          yum update -y
+
+          # Step 2: Install Git & Docker
+          yum install -y git
+          amazon-linux-extras install -y docker
+          systemctl enable docker
+          systemctl start docker
+          usermod -aG docker ec2-user
+
+          # Step 3: Install Docker Compose
+          DOCKER_CONFIG=/usr/local/lib/docker/cli-plugins
+          mkdir -p $DOCKER_CONFIG
+          curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+          ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+          # Configure Docker CLI plugin directory for `docker compose` syntax
+          mkdir -p /usr/libexec/docker/cli-plugins
+          cp /usr/local/bin/docker-compose /usr/libexec/docker/cli-plugins/docker-compose
+          chmod +x /usr/libexec/docker/cli-plugins/docker-compose
+
+          # Step 4: Configure HTTP Port Forwarding (80 -> 8000)
+          # Allows direct access on standard HTTP port 80 in addition to port 8000
+          iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8000
+          yum install -y iptables-services || true
+          service iptables save || true
+
+          # Step 5: Clone RecipeForge repository
+          APP_DIR="/opt/recipeforge"
+          mkdir -p $APP_DIR
+          git clone -b ${Branch} ${RepositoryUrl} $APP_DIR
+          cd $APP_DIR
+
+          # Step 6: Launch application stack with Docker Compose
+          echo "Starting Docker Compose stack..."
+          if docker compose version >/dev/null 2>&1; then
+              docker compose up -d --build
+          else
+              docker-compose up -d --build
+          fi
+
+          echo "=========================================================="
+          echo "RecipeForge Automated Provisioning Completed Successfully!"
+          echo "=========================================================="
+
+Outputs:
+  InstanceId:
+    Description: "EC2 Instance ID"
+    Value: !Ref RecipeForgeInstance
+
+  PublicIp:
+    Description: "Public IPv4 address of the RecipeForge EC2 instance"
+    Value: !GetAtt RecipeForgeInstance.PublicIp
+
+  PublicDns:
+    Description: "Public DNS name of the RecipeForge EC2 instance"
+    Value: !GetAtt RecipeForgeInstance.PublicDnsName
+
+  AppUrlPort8000:
+    Description: "Direct URL to RecipeForge web application on port 8000"
+    Value: !Sub "http://${RecipeForgeInstance.PublicIp}:8000"
+
+  AppUrlPort80:
+    Description: "Standard HTTP URL to RecipeForge web application (port 80 forwarded to 8000)"
+    Value: !Sub "http://${RecipeForgeInstance.PublicIp}"
+
+  SSHAccessCommand:
+    Description: "SSH connection string to access the EC2 instance"
+    Value: !Sub "ssh -i <your-key.pem> ec2-user@${RecipeForgeInstance.PublicIp}"
