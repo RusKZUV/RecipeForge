@@ -98,6 +98,9 @@ The project strictly adhered to a sequential 5-phase execution model. No phase w
 
 ```
 RecipeForge/
+├── .github/
+│   └── workflows/
+│       └── ci.yml              # GitHub Actions CI pipeline (pytest, Vitest, Playwright, build)
 ├── backend/
 │   ├── app/
 │   │   ├── routers/        # FastAPI endpoint handlers (auth, pantry, recipes, matches, shopping, cook)
@@ -114,7 +117,7 @@ RecipeForge/
 │   ├── src/
 │   │   ├── components/     # Reusable and feature UI components
 │   │   │   ├── auth/       # Login, registration, and auth screens
-│   │   │   ├── layout/     # TopNav, BottomNav, notebook container Layout
+│   │   │   ├── layout/     # TopNav, SidebarNav, BottomNav, notebook container Layout
 │   │   │   ├── profile/    # Dietary filters, equipment selection, staples
 │   │   │   ├── recipes/    # RecipeDetailsModal and recipe display components
 │   │   │   └── ui/         # Design system primitives (Button, Card, Badge, Input)
@@ -124,6 +127,8 @@ RecipeForge/
 │   │   ├── types/          # TypeScript domain models and API contracts
 │   │   ├── App.tsx         # Main interactive notebook container
 │   │   └── App.test.tsx    # Frontend component and integration tests
+│   ├── e2e/                # Playwright E2E tests (desktop-layout.spec.ts)
+│   └── playwright.config.ts # Playwright configuration
 ├── docs/
 │   ├── plan.md             # Authoritative product specifications and behavior requirements
 │   ├── process.md          # Multi-agent development lifecycle and orchestrator rules
@@ -193,3 +198,11 @@ Major milestones and historical agent actions:
     - **PostgreSQL Support (#36)**: Added `psycopg2-binary`, configured `backend/app/database.py` with dynamic `DATABASE_URL` parsing, scheme normalization, and connection health pinging.
     - **Docker Compose Orchestration (#37)**: Created `docker-compose.yaml` linking `db` (`postgres:16-alpine` with healthcheck) and `app` on port 8000 with persistent data volume `postgres_data`.
     - **Full QA Verification**: Verified all 107 frontend tests, 17 backend tests, and seed integrity; closed issues #35, #36, and #37 with `## QA: PASS`.
+
+12. **Desktop UI Redesign & CI/CD Pipeline**:
+    - **Sidebar Navigation**: Replaced mobile `BottomNav` with `SidebarNav` for desktop (≥769px); mobile keeps bottom nav via responsive CSS.
+    - **Responsive Grids**: Pantry items in 3-column grid, recipe cards in 3-column grid, shopping items in 2-column grid, all collapsing on smaller viewports.
+    - **Expanded Layout**: `--layout-max-width` changed from 480px to 1280px for full desktop utilization.
+    - **Playwright E2E Tests**: Added 4 Playwright tests covering sidebar navigation, pantry CRUD grid, and recipe grid/modal interactions using mock API (`VITE_USE_MOCK_API=true`).
+    - **CI/CD Workflow**: Created `.github/workflows/ci.yml` with 4 jobs: backend pytest, frontend Vitest, frontend Playwright E2E, and production build check — triggered on push/PR to `main`.
+    - **All tests passing**: 107 frontend unit tests, 17 backend tests, 4 Playwright E2E tests.
