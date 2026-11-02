@@ -100,7 +100,7 @@ The project strictly adhered to a sequential 5-phase execution model. No phase w
 RecipeForge/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml              # GitHub Actions CI pipeline (pytest, Vitest, Playwright, build)
+│       └── ci-cd.yml           # GitHub Actions CI/CD pipeline (pytest, Vitest, Playwright, build, Render deploy)
 ├── backend/
 │   ├── app/
 │   │   ├── routers/        # FastAPI endpoint handlers (auth, pantry, recipes, matches, shopping, cook)
@@ -204,5 +204,5 @@ Major milestones and historical agent actions:
     - **Responsive Grids**: Pantry items in 3-column grid, recipe cards in 3-column grid, shopping items in 2-column grid, all collapsing on smaller viewports.
     - **Expanded Layout**: `--layout-max-width` changed from 480px to 1280px for full desktop utilization.
     - **Playwright E2E Tests**: Added 4 Playwright tests covering sidebar navigation, pantry CRUD grid, and recipe grid/modal interactions using mock API (`VITE_USE_MOCK_API=true`).
-    - **CI/CD Workflow**: Created `.github/workflows/ci.yml` with 4 jobs: backend pytest, frontend Vitest, frontend Playwright E2E, and production build check — triggered on push/PR to `main`.
+    - **CI/CD Workflow**: Created `.github/workflows/ci-cd.yml` with backend pytest, frontend Vitest, Playwright E2E, production build, and automated Render deployment step triggered on push to `main`.
     - **All tests passing**: 107 frontend unit tests, 17 backend tests, 4 Playwright E2E tests.
