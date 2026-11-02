@@ -4,6 +4,7 @@ uvicorn==0.54.0
 sqlalchemy==2.1.5
 pydantic==2.14.1
 pydantic-core==2.50.1
+psycopg2-binary==2.9.10
 
 # Testing & Development
 pytest==9.1.1

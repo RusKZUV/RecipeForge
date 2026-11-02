@@ -26,7 +26,7 @@ export function getApiService(config?: ServiceFactoryConfig): ApiService {
       const baseUrl =
         config?.baseUrl ||
         (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_API_URL : undefined) ||
-        'http://localhost:8091';
+        '';
       activeApiService = new HttpApiService(baseUrl);
     }
   }

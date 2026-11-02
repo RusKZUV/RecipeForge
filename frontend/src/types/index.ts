@@ -69,6 +69,7 @@ export interface PantryItem {
   expires_on: string | null;
   created_at?: string;
   updated_at?: string;
+  expiry_status?: ExpiryStatus;
 }
 
 export interface CustomIngredient {

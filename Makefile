@@ -1,4 +1,4 @@
-.PHONY: run test seed seed-check run-backend run-frontend test-backend test-frontend
+.PHONY: run test seed seed-check run-backend run-frontend test-backend test-frontend docker-build docker-up docker-down
 
 run:
 	@echo "Starting RecipeForge services..."
@@ -23,3 +23,12 @@ seed:
 
 seed-check:
 	cd backend && uv run python -m app.seed_check
+
+docker-build:
+	docker compose build
+
+docker-up:
+	docker compose up -d
+
+docker-down:
+	docker compose down
