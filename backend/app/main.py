@@ -9,6 +9,7 @@ from app.database import Base, engine, SessionLocal
 from app.config import config
 from app.migrate import run_migrations
 from app.seed import seed_database
+from app.telemetry import setup_telemetry
 from app.routers import (
     auth_router,
     pantry_router,
@@ -39,6 +40,9 @@ app = FastAPI(
     description="Web app that helps budget-conscious students cook affordable meals from ingredients they already have.",
     lifespan=lifespan,
 )
+
+# Initialize OpenTelemetry instrumentation
+setup_telemetry(app)
 
 # CORS configuration
 origins = config.CORS_ORIGINS

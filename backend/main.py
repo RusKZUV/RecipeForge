@@ -1,3 +1,6 @@
 from app.main import app
+from telemetry import setup_telemetry
 
-__all__ = ["app"]
+setup_telemetry(app)
+
+__all__ = ["app", "setup_telemetry"]

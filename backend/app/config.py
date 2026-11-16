@@ -82,6 +82,14 @@ class AppConfig:
         raw = os.getenv("CORS_ORIGINS", default)
         return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
+    @property
+    def OTEL_SERVICE_NAME(self) -> str:
+        return os.getenv("OTEL_SERVICE_NAME", "recipeforge-backend")
+
+    @property
+    def OTEL_EXPORTER_OTLP_ENDPOINT(self) -> str:
+        return os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317")
+
     # Scoring config (from docs/plan.md Section 6.5)
     WEIGHT_COVERAGE: float = 0.45
     WEIGHT_URGENCY: float = 0.25
