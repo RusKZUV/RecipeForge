@@ -1,0 +1,20 @@
+groups:
+  - name: recipeforge_alerts
+    rules:
+      - alert: HighPantryMatchLatency
+        expr: histogram_quantile(0.95, rate(recipeforge_pantry_match_duration_seconds_bucket{environment="production"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Pantry Match Latency"
+          description: "Pantry match p95 latency is greater than 2 seconds in production for more than 5 minutes."
+
+      - alert: HighErrorRate
+        expr: sum(rate(http_server_request_duration_seconds_count{http_status_code=~"5..",environment="production"}[5m])) / sum(rate(http_server_request_duration_seconds_count{environment="production"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High HTTP 5xx Error Rate"
+          description: "HTTP 5xx error rate exceeds 5% in production for more than 5 minutes."
