@@ -1,9 +1,12 @@
+import logging
 import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+
+logger = logging.getLogger(__name__)
 
 from app.database import Base, engine, SessionLocal
 from app.config import config
@@ -68,6 +71,33 @@ app.include_router(cook_router)
 @app.get("/health", tags=["system"])
 def health_check():
     return {"status": "ok", "app": "RecipeForge", "version": "0.1.0"}
+
+
+@app.post("/webhook/alert", tags=["system"], status_code=200)
+async def webhook_alert(request: Request):
+    """
+    Alertmanager webhook receiver.
+
+    Accepts an Alertmanager POST payload, delegates triage to the on-call AI
+    agent, logs the resulting report, and returns it in the response body.
+    """
+    import sys
+    import os as _os
+    # Ensure the backend root is importable when running inside the app package
+    backend_dir = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    if backend_dir not in sys.path:
+        sys.path.insert(0, backend_dir)
+
+    from oncall_agent import generate_triage_report  # noqa: PLC0415
+
+    try:
+        alert_data = await request.json()
+    except Exception:
+        alert_data = {}
+
+    report = generate_triage_report(alert_data)
+    logger.info("On-call triage report:\n%s", report)
+    return {"report": report}
 
 
 # Static files and React SPA fallback configuration
