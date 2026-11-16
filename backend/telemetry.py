@@ -39,9 +39,23 @@ def setup_telemetry(app: FastAPI) -> None:
     trace.set_tracer_provider(tracer_provider)
 
     # Set up MeterProvider (PeriodicExportingMetricReader -> OTLP gRPC)
+    from opentelemetry.sdk.metrics.view import View, ExplicitBucketHistogramAggregation
+
     metric_exporter = OTLPMetricExporter(endpoint=endpoint, insecure=insecure)
     metric_reader = PeriodicExportingMetricReader(metric_exporter)
-    meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
+    views = [
+        View(
+            instrument_name="recipeforge_pantry_match_duration_seconds",
+            aggregation=ExplicitBucketHistogramAggregation(
+                boundaries=[0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0]
+            ),
+        )
+    ]
+    meter_provider = MeterProvider(
+        resource=resource,
+        metric_readers=[metric_reader],
+        views=views,
+    )
     metrics.set_meter_provider(meter_provider)
 
     # Instrument FastAPI application

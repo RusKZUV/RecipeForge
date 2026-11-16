@@ -1,3 +1,4 @@
+import os
 import secrets
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -15,6 +16,7 @@ from app.schemas import (
     RecipeStepSchema,
 )
 from app.auth import get_current_user
+from app.metrics import recipeforge_recipes_created_total
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 
@@ -152,6 +154,11 @@ def create_recipe(
 
     db.commit()
     db.refresh(recipe)
+
+    # Record recipe creation metric
+    env = os.getenv("ENVIRONMENT", os.getenv("APP_ENV", "development"))
+    recipeforge_recipes_created_total.add(1, {"environment": env})
+
     return build_recipe_response(recipe)
 
 

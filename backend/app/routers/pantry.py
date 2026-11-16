@@ -1,6 +1,6 @@
 import secrets
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -8,8 +8,28 @@ from app.models import User, PantryItem, Ingredient
 from app.schemas import PantryItemCreate, PantryItemUpdate, PantryItemResponse
 from app.auth import get_current_user
 from app.expiry import compute_expiry_status
+from app.routers.matches import get_recipe_matches
 
 router = APIRouter(prefix="/pantry", tags=["pantry"])
+
+
+@router.get("/match")
+def match_pantry_recipes(
+    sort_by: str = Query("balanced"),
+    min_coverage: Optional[float] = Query(None),
+    limit: int = Query(12, ge=1, le=50),
+    offset: int = Query(0, ge=0),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return get_recipe_matches(
+        sort_by=sort_by,
+        min_coverage=min_coverage,
+        limit=limit,
+        offset=offset,
+        user=user,
+        db=db,
+    )
 
 
 def build_pantry_response(item: PantryItem) -> PantryItemResponse:

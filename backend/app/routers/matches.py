@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, Query
@@ -10,6 +11,10 @@ from app.auth import get_current_user
 from app.config import config
 from app.expiry import compute_expiry_status
 from app.schemas import RecipeResponse, RecipeIngredientSchema, RecipeStepSchema
+from app.metrics import (
+    recipeforge_pantry_match_requests_total,
+    recipeforge_pantry_match_duration_seconds,
+)
 
 router = APIRouter(tags=["matching"])
 
@@ -39,6 +44,7 @@ class MatchResult:
 
 
 @router.get("/matches")
+@router.get("/pantry/match")
 def get_recipe_matches(
     sort_by: str = Query("balanced"),
     min_coverage: Optional[float] = Query(None),
@@ -47,6 +53,8 @@ def get_recipe_matches(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    start_time = time.perf_counter()
+    recipeforge_pantry_match_requests_total.add(1)
     pantry_items = db.query(PantryItem).filter(PantryItem.user_id == user.id).all()
     pantry_by_ing: Dict[str, List[PantryItem]] = {}
     for p in pantry_items:
@@ -280,6 +288,9 @@ def get_recipe_matches(
             "missing_items": m.missing_items,
             "substitutions": m.substitutions,
         })
+
+    duration = time.perf_counter() - start_time
+    recipeforge_pantry_match_duration_seconds.record(duration)
 
     return {
         "items": items,
