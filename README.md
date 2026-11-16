@@ -243,6 +243,42 @@ Once configured, releases can be triggered with one click:
 
 ---
 
+## 📊 Local Observability Stack
+
+RecipeForge includes a pre-configured, production-aligned local observability stack powered by OpenTelemetry, Prometheus, Loki, Tempo, and Grafana:
+
+| Component | Port | Description |
+| :--- | :--- | :--- |
+| **OpenTelemetry Collector** | `4317` (gRPC), `4318` (HTTP), `8889` (metrics) | Central ingestion pipeline for traces, metrics, and logs |
+| **Prometheus** | `9090` | Timeseries database scraping metrics from `otel-collector:8889` |
+| **Loki** | `3100` | Log aggregation and query engine |
+| **Tempo** | `3200` (HTTP), `4317` (internal OTLP) | High-scale distributed tracing backend |
+| **Grafana** | `3000` (login: `admin` / `admin`) | Unified dashboards with pre-provisioned Prometheus, Loki, and Tempo datasources |
+
+### Running the Observability Stack
+
+```bash
+# Launch the observability stack
+docker compose -f observability/docker-compose.yml up -d
+
+# View logs
+docker compose -f observability/docker-compose.yml logs -f
+
+# Stop the stack
+docker compose -f observability/docker-compose.yml down
+```
+
+*Or via the Makefile:*
+```bash
+make observability-up
+make observability-logs
+make observability-down
+```
+
+Access Grafana at [http://localhost:3000](http://localhost:3000) (default credentials: `admin` / `admin`). Pre-configured datasources for Prometheus, Loki, and Tempo are immediately available for querying and cross-linking.
+
+---
+
 ## 📂 Project Structure
 
 ```

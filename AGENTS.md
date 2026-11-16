@@ -235,3 +235,10 @@ Major milestones and historical agent actions:
     - **Gated Approval**: Uses `environment: production` enabling GitHub environment protection rules (Required Reviewers).
     - **Pipeline Stages**: Repository checkout -> Docker build from multi-stage `Dockerfile` -> Registry push / runner verification -> Render production deploy hook trigger.
     - **Documentation**: Comprehensive instructions added to `README.md` for triggering releases and configuring reviewer protection rules in repository settings.
+
+15. **Local Observability Stack (`observability/`)**:
+    - **OpenTelemetry Collector**: Ingests OTLP traces and metrics on ports `4317` (gRPC) and `4318` (HTTP), exporting to Tempo and Prometheus.
+    - **Prometheus & Loki**: Timeseries metric scraping on `9090` and log ingestion on `3100`.
+    - **Tempo**: Distributed trace collection and storage on port `3200`.
+    - **Grafana**: Web UI on port `3000` (`admin`/`admin`) with pre-provisioned datasources for Prometheus, Loki, and Tempo.
+    - **Automation**: Managed via `make observability-up`, `make observability-down`, `make observability-logs`.

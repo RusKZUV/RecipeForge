@@ -1,4 +1,4 @@
-.PHONY: run test seed seed-check run-backend run-frontend test-backend test-frontend docker-build docker-up docker-down docker-dev-up docker-dev-down docker-dev-logs docker-prod-up docker-prod-down docker-prod-logs
+.PHONY: run test seed seed-check run-backend run-frontend test-backend test-frontend docker-build docker-up docker-down docker-dev-up docker-dev-down docker-dev-logs docker-prod-up docker-prod-down docker-prod-logs observability-up observability-down observability-logs
 
 run:
 	@echo "Starting RecipeForge services..."
@@ -49,6 +49,16 @@ docker-prod-down:
 
 docker-prod-logs:
 	docker compose --env-file .env.prod -f docker-compose.prod.yml logs -f
+
+# Observability Stack (observability/docker-compose.yml)
+observability-up:
+	docker compose -f observability/docker-compose.yml up -d
+
+observability-down:
+	docker compose -f observability/docker-compose.yml down
+
+observability-logs:
+	docker compose -f observability/docker-compose.yml logs -f
 
 # Default shortcuts
 docker-build: docker-dev-build
