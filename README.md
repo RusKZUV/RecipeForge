@@ -95,6 +95,56 @@ run.cmd
 
 ---
 
+## 🌍 Environments
+
+RecipeForge ships three runtime environments, each fully isolated from the others.
+
+### Development (Docker, hot-reload)
+
+Runs FastAPI with live code-mounting and an isolated PostgreSQL container on port `5433`:
+
+```bash
+# Start dev stack (PostgreSQL on 5433, FastAPI on 8091 with hot-reload)
+docker compose --env-file .env.dev -f docker-compose.dev.yml up -d --build
+
+# Tail logs
+docker compose -f docker-compose.dev.yml logs -f
+
+# Stop
+docker compose -f docker-compose.dev.yml down
+# or
+make docker-dev-up / make docker-dev-down
+```
+
+The backend API (and Swagger docs) will be available at `http://localhost:8091/docs`.
+
+### Production (Docker, optimised multi-stage build)
+
+Compiles the React SPA into static assets and serves them via FastAPI on port `8000`, backed by an isolated PostgreSQL container:
+
+```bash
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
+# or
+make docker-prod-up
+```
+
+App available at `http://localhost:8000`.
+
+### Local (no Docker)
+
+```bash
+# Backend
+cd backend && uv sync && uv run uvicorn app.main:app --reload --port 8091
+
+# Frontend (separate terminal)
+cd frontend && npm install && npm run dev
+```
+
+> [!IMPORTANT]
+> **Environment isolation is enforced on 4 independent layers** — runtime safety guard, network isolation, volume partitioning, and credential isolation. See the full matrix below.
+
+---
+
 ## 🐳 Docker Environments (Development & Production)
 
 RecipeForge provides strictly decoupled, isolated environments for local development and production deployments.
@@ -196,7 +246,7 @@ npm test
 
 ### ✅ Test Results
 - **Frontend**: **110 passed across 13 test files** (`vitest` + React Testing Library)
-- **Backend**: **23 passed, 0 failed** (`pytest` + FastAPI `TestClient`)
+- **Backend**: **37 passed, 0 failed** (`pytest` + FastAPI `TestClient`) — including 10 tests for the AI on-call agent
 
 ---
 
@@ -243,39 +293,126 @@ Once configured, releases can be triggered with one click:
 
 ---
 
-## 📊 Local Observability Stack
+## 📊 Observability Stack
 
-RecipeForge includes a pre-configured, production-aligned local observability stack powered by OpenTelemetry, Prometheus, Loki, Tempo, and Grafana:
+RecipeForge ships a full, production-aligned local observability stack powered by OpenTelemetry, Prometheus, Loki, Tempo, and Grafana.
 
-| Component | Port | Description |
+### Component Ports
+
+| Component | Port(s) | Purpose |
 | :--- | :--- | :--- |
-| **OpenTelemetry Collector** | `4317` (gRPC), `4318` (HTTP), `8889` (metrics) | Central ingestion pipeline for traces, metrics, and logs |
-| **Prometheus** | `9090` | Timeseries database scraping metrics from `otel-collector:8889` |
+| **OpenTelemetry Collector** | `4317` gRPC · `4318` HTTP · `8889` metrics | Central ingestion pipeline for traces, metrics, and logs |
+| **Prometheus** | `9090` | Timeseries metric scraping from `otel-collector:8889` |
+| **Alertmanager** | `9093` | Alert routing and webhook delivery |
 | **Loki** | `3100` | Log aggregation and query engine |
-| **Tempo** | `3200` (HTTP), `4317` (internal OTLP) | High-scale distributed tracing backend |
-| **Grafana** | `3000` (login: `admin` / `admin`) | Unified dashboards with pre-provisioned Prometheus, Loki, and Tempo datasources |
+| **Tempo** | `3200` | Distributed trace storage and query |
+| **Grafana** | `3000` (admin / admin) | Unified dashboards — Prometheus, Loki, and Tempo datasources pre-wired |
 
-### Running the Observability Stack
+### Starting the Stack
 
 ```bash
-# Launch the observability stack
+# Launch everything (all services in observability/docker-compose.yml)
 docker compose -f observability/docker-compose.yml up -d
-
-# View logs
-docker compose -f observability/docker-compose.yml logs -f
-
-# Stop the stack
-docker compose -f observability/docker-compose.yml down
-```
-
-*Or via the Makefile:*
-```bash
+# or
 make observability-up
+
+# Tail logs
+docker compose -f observability/docker-compose.yml logs -f
+# or
 make observability-logs
+
+# Stop
+docker compose -f observability/docker-compose.yml down
+# or
 make observability-down
 ```
 
-Access Grafana at [http://localhost:3000](http://localhost:3000) (default credentials: `admin` / `admin`). Pre-configured datasources for Prometheus, Loki, and Tempo are immediately available for querying and cross-linking.
+### Grafana Dashboard
+
+Access Grafana at **[http://localhost:3000](http://localhost:3000)** (`admin` / `admin`).
+
+A pre-provisioned **RecipeForge** dashboard (`observability/grafana/dashboards/recipeforge.json`) loads automatically and contains four panels:
+
+| Panel | PromQL Expression |
+| :--- | :--- |
+| **Recipes Created (rate)** | `rate(recipeforge_recipes_created_total[5m])` |
+| **Pantry Match Rate** | `rate(recipeforge_pantry_match_requests_total[5m])` |
+| **Pantry Match p95** | `histogram_quantile(0.95, rate(recipeforge_pantry_match_duration_seconds_bucket[5m]))` |
+| **HTTP 5xx Error Rate** | `sum(rate(http_server_request_duration_seconds_count{http_status_code=~"5.."}[5m]))` |
+
+Dashboard provisioning is configured in `observability/grafana/provisioning/dashboards/default.yaml` and scans for new JSON files every 10 seconds.
+
+---
+
+## 🚨 Alerts
+
+Alert rules are defined in `observability/prometheus/alert-rules.yml` and loaded automatically by Prometheus.
+
+| Alert | Expression | Threshold | `for` | Severity |
+| :--- | :--- | :--- | :--- | :--- |
+| **HighPantryMatchLatency** | `histogram_quantile(0.95, rate(recipeforge_pantry_match_duration_seconds_bucket{environment="production"}[5m]))` | `> 2 s` | 5 m | warning |
+| **HighErrorRate** | `sum(rate(http_server_request_duration_seconds_count{http_status_code=~"5..",environment="production"}[5m])) / sum(rate(http_server_request_duration_seconds_count{environment="production"}[5m]))` | `> 5 %` | 5 m | critical |
+
+Alertmanager (`observability/alertmanager/alertmanager.yml`) routes all firing alerts to the webhook receiver at `http://host.docker.internal:8000/webhook/alert`.
+
+View active alerts at **[http://localhost:9090/alerts](http://localhost:9090/alerts)** (Prometheus) or **[http://localhost:9093](http://localhost:9093)** (Alertmanager).
+
+---
+
+## 🤖 AI On-call Agent
+
+RecipeForge includes an AI on-call triage agent (`backend/oncall_agent.py`) that is invoked automatically whenever Alertmanager fires an alert.
+
+### How It Works
+
+```
+Alertmanager fires alert
+        │
+        ▼
+POST http://host.docker.internal:8000/webhook/alert
+        │
+        ▼
+webhook_alert() in app/main.py
+        │
+        ▼
+generate_triage_report(alert_data)   ← oncall_agent.py
+        │
+        ├── Parse alertname + severity from labels
+        ├── Build PromQL expression for the alert
+        ├── Query http://prometheus:9090/api/v1/query
+        ├── Compute min / max / avg across returned samples
+        └── Return: "ALERT: [name], Severity: [sev], Trend: [min/max/avg]"
+        │
+        ▼
+Report logged at INFO level + returned in JSON response body
+```
+
+### Calling the Webhook Manually
+
+```bash
+curl -X POST http://localhost:8000/webhook/alert \
+  -H "Content-Type: application/json" \
+  -d '{
+    "alerts": [{
+      "labels": {
+        "alertname": "HighPantryMatchLatency",
+        "severity": "warning"
+      },
+      "status": "firing"
+    }]
+  }'
+```
+
+**Example response:**
+```json
+{
+  "report": "ALERT: HighPantryMatchLatency, Severity: warning, Trend: min=0.0310 / max=1.8200 / avg=0.4125"
+}
+```
+
+The agent degrades gracefully: if Prometheus is unreachable, `Trend: N/A` is reported without raising an error.
+
+---
 
 ---
 
@@ -289,8 +426,9 @@ RecipeForge/
 │   │   ├── models.py      # SQLAlchemy 2.x declarative ORM models
 │   │   ├── schemas.py     # Pydantic v2 validation models
 │   │   ├── seed.py        # Seed dataset (80 ingredients, 25 recipes)
-│   │   └── main.py        # FastAPI app entry point & CORS configuration
-│   └── tests/             # Backend pytest integration test suite
+│   │   └── main.py        # FastAPI app entry point, CORS, /webhook/alert
+│   ├── oncall_agent.py    # AI on-call triage agent (Prometheus query + report)
+│   └── tests/             # Backend pytest integration test suite (37 tests)
 ├── frontend/
 │   ├── src/
 │   │   ├── components/    # UI components (notebook theme, cards, modals, layout)
@@ -299,6 +437,22 @@ RecipeForge/
 │   │   ├── styles/        # Design system tokens and CSS variables
 │   │   └── types/         # TypeScript domain interfaces
 │   └── src/App.test.tsx   # Frontend integration tests
+├── observability/
+│   ├── docker-compose.yml          # Full observability stack (OTel, Prometheus, Alertmanager, Loki, Tempo, Grafana)
+│   ├── prometheus.yml              # Prometheus scrape + alerting config
+│   ├── prometheus/
+│   │   └── alert-rules.yml         # HighPantryMatchLatency + HighErrorRate alert rules
+│   ├── alertmanager/
+│   │   └── alertmanager.yml        # Webhook receiver → /webhook/alert
+│   ├── grafana/
+│   │   ├── dashboards/
+│   │   │   └── recipeforge.json    # Pre-built 4-panel RecipeForge dashboard
+│   │   └── provisioning/
+│   │       ├── dashboards/default.yaml   # Auto-provision dashboard JSON files
+│   │       └── datasources/datasources.yml  # Prometheus, Loki, Tempo datasources
+│   ├── collector-config.yaml
+│   ├── tempo-config.yaml
+│   └── loki-config.yaml
 ├── docs/                  # Product specifications, design tokens, agent roles
 ├── openapi.yaml           # Source of truth API contract
 ├── run.cmd / test.cmd     # Windows automation scripts
