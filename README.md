@@ -200,6 +200,43 @@ npm test
 
 ---
 
+## 🚀 CI/CD & Production Deployment
+
+RecipeForge includes automated continuous integration and a manual, gated production deployment pipeline using GitHub Actions.
+
+### 1. Manual Production Deployment Workflow (`deploy-prod.yml`)
+
+The production deployment workflow (`.github/workflows/deploy-prod.yml`) is triggered on-demand via `workflow_dispatch` and runs within the protected GitHub `production` environment:
+1. **Checkout**: Checks out the production release branch.
+2. **Build**: Builds the multi-stage production Docker image (`Dockerfile`).
+3. **Registry Push / Verification**: Pushes the image to the configured container registry (or validates locally on runner if external registry is omitted).
+4. **Deploy Trigger**: Calls the Render production deploy hook (`secrets.RENDER_DEPLOY_HOOK`).
+
+### 2. How to Configure Environment Protection Rules (Approval / Required Reviewers)
+
+To enforce mandatory human review and approval before any production deployment executes:
+
+1. In your GitHub repository, navigate to the **Settings** tab.
+2. In the left navigation sidebar, select **Environments** (under *Code and automation*).
+3. Click **New environment**, name it `production`, and click **Configure environment**.
+4. Under **Deployment protection rules**, enable the **Required reviewers** checkbox.
+5. Search for and select the GitHub usernames or teams authorized to approve production releases.
+6. *(Optional)* Under **Deployment branches**, select **Selected branches** and add `main` to prevent deployments from experimental branches.
+7. Click **Save protection rules**.
+
+### 3. How to Run the Production Deployment Manually
+
+Once configured, releases can be triggered with one click:
+
+1. Navigate to the **Actions** tab in your GitHub repository.
+2. In the left workflow list, select **Deploy to Production**.
+3. Click the **Run workflow** dropdown on the right side.
+4. Select the branch (default: `main`) and optionally enter a deployment reason or release tag.
+5. Click the green **Run workflow** button.
+6. **Approval Gate**: If Required Reviewers are configured, the workflow will pause at the `deploy-production` job with status `Waiting`. An authorized reviewer clicks **Review deployments**, selects the `production` environment, and clicks **Approve and deploy** to execute release.
+
+---
+
 ## 📂 Project Structure
 
 ```

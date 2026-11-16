@@ -105,7 +105,8 @@ The project strictly adhered to a sequential 5-phase execution model. No phase w
 RecipeForge/
 ├── .github/
 │   └── workflows/
-│       └── ci-cd.yml           # GitHub Actions CI/CD pipeline (pytest, Vitest, Playwright, build, Render deploy)
+│       ├── ci-cd.yml           # GitHub Actions CI/CD pipeline (pytest, Vitest, Playwright, build, Render deploy)
+│       └── deploy-prod.yml     # Manual production deployment workflow (workflow_dispatch + approval environment)
 ├── backend/
 │   ├── app/
 │   │   ├── routers/        # FastAPI endpoint handlers (auth, pantry, recipes, matches, shopping, cook)
@@ -228,3 +229,9 @@ Major milestones and historical agent actions:
       3. Separate database names (`recipeforge_dev_db` vs `recipeforge_prod_db`), distinct database users/passwords, and non-overlapping host ports (`5433` vs `5432`).
       4. Partitioned Docker storage volumes (`recipeforge_postgres_dev_data` vs `recipeforge_postgres_prod_data`).
     - **All tests passing**: 110 frontend unit tests, 23 backend tests.
+
+14. **Manual Production Deployment Workflow (`deploy-prod.yml`)**:
+    - **Trigger**: `workflow_dispatch` for manual releases from the GitHub Actions tab with optional deployment reasons and release tags.
+    - **Gated Approval**: Uses `environment: production` enabling GitHub environment protection rules (Required Reviewers).
+    - **Pipeline Stages**: Repository checkout -> Docker build from multi-stage `Dockerfile` -> Registry push / runner verification -> Render production deploy hook trigger.
+    - **Documentation**: Comprehensive instructions added to `README.md` for triggering releases and configuring reviewer protection rules in repository settings.

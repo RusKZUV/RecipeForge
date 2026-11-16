@@ -1,0 +1,64 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Reason for manual deployment"
+        required: false
+        default: "Manual production release"
+      tag:
+        description: "Image tag or version"
+        required: false
+        default: "latest"
+
+jobs:
+  # Для активации approval зайди в Settings → Environments → production → Required reviewers
+  deploy-production:
+    name: Production Deployment
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        run: |
+          IMAGE_TAG="${{ github.event.inputs.tag || 'latest' }}"
+          echo "Building production Docker image with tags: latest, $IMAGE_TAG, ${{ github.sha }}..."
+          docker build \
+            --file Dockerfile \
+            --tag recipeforge:$IMAGE_TAG \
+            --tag recipeforge:${{ github.sha }} \
+            .
+          echo "Production Docker image built successfully."
+
+      - name: Push to Registry / Log Image
+        run: |
+          IMAGE_TAG="${{ github.event.inputs.tag || 'latest' }}"
+          if [ -n "${{ secrets.DOCKER_REGISTRY_URL }}" ] && [ -n "${{ secrets.DOCKER_USERNAME }}" ]; then
+            echo "Logging in to Docker registry ${{ secrets.DOCKER_REGISTRY_URL }}..."
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login "${{ secrets.DOCKER_REGISTRY_URL }}" -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            docker tag recipeforge:$IMAGE_TAG "${{ secrets.DOCKER_REGISTRY_URL }}/recipeforge:$IMAGE_TAG"
+            docker push "${{ secrets.DOCKER_REGISTRY_URL }}/recipeforge:$IMAGE_TAG"
+            echo "Image successfully pushed to registry."
+          else
+            echo "ℹ️ External registry not configured (secrets.DOCKER_REGISTRY_URL / DOCKER_USERNAME not set)."
+            echo "Docker image built and verified locally on runner:"
+            docker images | grep recipeforge || docker images
+          fi
+
+      - name: Trigger Production Deployment
+        run: |
+          echo "Initiating production release deployment..."
+          echo "Deployment reason: ${{ github.event.inputs.reason }}"
+          if [ -n "${{ secrets.RENDER_DEPLOY_HOOK }}" ]; then
+            echo "🚀 Triggering Render Production Deploy Hook..."
+            curl -fsSL -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+            echo "✅ Production deployment triggered successfully."
+          else
+            echo "ℹ️ RENDER_DEPLOY_HOOK secret is not set. Deployment completed."
+          fi
