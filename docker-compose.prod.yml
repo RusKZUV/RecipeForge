@@ -1,0 +1,62 @@
+# ==============================================================================
+# RecipeForge Production Docker Compose (docker-compose.prod.yml)
+# Production-grade multi-stage build, isolated networks, and secure storage
+# ==============================================================================
+
+services:
+  db-prod:
+    image: postgres:16-alpine
+    container_name: recipeforge-db-prod
+    restart: always
+    env_file:
+      - .env.prod
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-recipeforge_prod_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-recipeforge_prod_secure_password_replace_in_ci}
+      POSTGRES_DB: ${POSTGRES_DB:-recipeforge_prod_db}
+    # Security: Database bound strictly to localhost loopback, not public host interface
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-recipeforge_prod_user} -d ${POSTGRES_DB:-recipeforge_prod_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - recipeforge_prod_net
+
+  app-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: recipeforge-app-prod
+    restart: always
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    env_file:
+      - .env.prod
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      APP_ENV: ${APP_ENV:-production}
+      DEBUG: ${DEBUG:-false}
+      PORT: 8000
+      DATABASE_URL: ${DATABASE_URL:-postgresql://recipeforge_prod_user:recipeforge_prod_secure_password_replace_in_ci@db-prod:5432/recipeforge_prod_db}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8000,http://127.0.0.1:8000}
+      JWT_SECRET: ${JWT_SECRET:-prod_super_secure_jwt_secret_token_replace_in_production_2026}
+    depends_on:
+      db-prod:
+        condition: service_healthy
+    networks:
+      - recipeforge_prod_net
+
+volumes:
+  # Isolated production volume: Protected from dev operations
+  postgres_prod_data:
+    name: recipeforge_postgres_prod_data
+
+networks:
+  # Isolated production network: Separate namespace and bridge
+  recipeforge_prod_net:
+    name: recipeforge_prod_net

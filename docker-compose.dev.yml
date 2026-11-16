@@ -1,0 +1,66 @@
+# ==============================================================================
+# RecipeForge Development Docker Compose (docker-compose.dev.yml)
+# Fast, hot-reloading development environment with isolated dev PostgreSQL
+# ==============================================================================
+
+services:
+  db-dev:
+    image: postgres:16-alpine
+    container_name: recipeforge-db-dev
+    restart: unless-stopped
+    env_file:
+      - .env.dev
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-recipeforge_dev_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-recipeforge_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-recipeforge_dev_db}
+    ports:
+      # Host port 5433 avoids conflict with any local PostgreSQL instance or prod
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-recipeforge_dev_user} -d ${POSTGRES_DB:-recipeforge_dev_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - recipeforge_dev_net
+
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: recipeforge-app-dev
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8091}:8091"
+    env_file:
+      - .env.dev
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      APP_ENV: ${APP_ENV:-development}
+      DEBUG: ${DEBUG:-true}
+      PORT: 8091
+      DATABASE_URL: ${DATABASE_URL:-postgresql://recipeforge_dev_user:recipeforge_dev_password@db-dev:5432/recipeforge_dev_db}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://localhost:8091}
+      JWT_SECRET: ${JWT_SECRET:-dev-insecure-secret-key-recipeforge-local-only}
+    volumes:
+      # Mount application source for real-time code reloading
+      - ./backend/app:/app/app
+      - ./backend/data:/app/data
+    depends_on:
+      db-dev:
+        condition: service_healthy
+    networks:
+      - recipeforge_dev_net
+
+volumes:
+  # Isolated development volume: NEVER shares data with production
+  postgres_dev_data:
+    name: recipeforge_postgres_dev_data
+
+networks:
+  # Isolated development network: No routing to production containers
+  recipeforge_dev_net:
+    name: recipeforge_dev_net

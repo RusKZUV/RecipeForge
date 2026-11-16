@@ -26,8 +26,13 @@ This document is the **ultimate source of truth** and operational memory for aut
   - Run tests: `cd frontend && npm test`
   - Start dev server: `cd frontend && npm run dev`
   - Build production: `cd frontend && npm run build`
+- **Docker Environments**:
+  - Development (hot-reload, dev Postgres on 5433, app on 8091):
+    `docker compose --env-file .env.dev -f docker-compose.dev.yml up -d` or `make docker-dev-up`
+  - Production (multi-stage build, loopback Postgres, app on 8000):
+    `docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build` or `make docker-prod-up`
 - **Root Automation Scripts**:
-  - Cross-platform `Makefile`: `make run`, `make test`, `make seed`, `make seed-check`
+  - Cross-platform `Makefile`: `make run`, `make test`, `make seed`, `make docker-dev-up`, `make docker-prod-up`
   - Windows Command Scripts: `run.cmd` (concurrent launch), `test.cmd` (runs both test suites), `seed.cmd`
 
 ---
@@ -137,6 +142,12 @@ RecipeForge/
 │   ├── design-system.md    # Design system tokens, color palettes, typographic guidelines
 │   └── team/               # Role definitions (pm.md, software-engineer.md, qa-engineer.md)
 ├── openapi.yaml            # Complete OpenAPI 3.0 contract definition
+├── docker-compose.dev.yml  # Development docker compose with dev PostgreSQL & hot-reload
+├── docker-compose.prod.yml # Production docker compose with multi-stage build & loopback DB
+├── Dockerfile.dev          # Fast development backend image with auto-reload
+├── Dockerfile              # Multi-stage production image (React SPA build + FastAPI)
+├── .env.dev                # Development environment variables & credentials
+├── .env.prod               # Production environment variables & configurations
 ├── Makefile                # Cross-platform project automation
 ├── run.cmd / test.cmd      # Windows developer automation scripts
 └── README.md               # User-facing project documentation
@@ -206,3 +217,14 @@ Major milestones and historical agent actions:
     - **Playwright E2E Tests**: Added 4 Playwright tests covering sidebar navigation, pantry CRUD grid, and recipe grid/modal interactions using mock API (`VITE_USE_MOCK_API=true`).
     - **CI/CD Workflow**: Created `.github/workflows/ci-cd.yml` with backend pytest, frontend Vitest, Playwright E2E, production build, and automated Render deployment step triggered on push to `main`.
     - **All tests passing**: 107 frontend unit tests, 17 backend tests, 4 Playwright E2E tests.
+
+13. **Development & Production Environment Decoupling**:
+    - **Development Compose (`docker-compose.dev.yml`)**: Fast backend with live code mounting (`./backend/app:/app/app`), auto-reload, exposed port `8091`, and dedicated dev PostgreSQL container (`recipeforge-db-dev`) on port `5433` with volume `recipeforge_postgres_dev_data`.
+    - **Production Compose (`docker-compose.prod.yml`)**: Multi-stage production container (`recipeforge-app-prod`) on port `8000`, loopback-bound PostgreSQL (`recipeforge-db-prod`) on `127.0.0.1:5432`, and isolated volume `recipeforge_postgres_prod_data`.
+    - **Environment Files**: Dedicated `.env.dev` and `.env.prod` storing different ports, database URLs, JWT secrets, and CORS origins.
+    - **Multi-Layer Safety Guard**:
+      1. Runtime safeguard in `backend/app/config.py` (`config.validate_safety()`) blocks application startup if dev environment is configured with a production database target.
+      2. Isolated Docker networks (`recipeforge_dev_net` vs `recipeforge_prod_net`) prevent inter-environment container DNS and routing.
+      3. Separate database names (`recipeforge_dev_db` vs `recipeforge_prod_db`), distinct database users/passwords, and non-overlapping host ports (`5433` vs `5432`).
+      4. Partitioned Docker storage volumes (`recipeforge_postgres_dev_data` vs `recipeforge_postgres_prod_data`).
+    - **All tests passing**: 110 frontend unit tests, 23 backend tests.

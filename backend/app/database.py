@@ -1,6 +1,10 @@
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+from app.config import config
+
+# Enforce environment safety: prevents dev environment from ever connecting to prod DB
+config.validate_safety()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./recipeforge.db")
 

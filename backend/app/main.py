@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from app.database import Base, engine, SessionLocal
+from app.config import config
 from app.migrate import run_migrations
 from app.seed import seed_database
 from app.routers import (
@@ -21,6 +22,8 @@ from app.routers import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Enforce safety guard: verify dev environment does not target production DB
+    config.validate_safety()
     # Initialize database tables
     Base.metadata.create_all(bind=engine)
     # Apply safe column migrations on existing tables
@@ -38,8 +41,7 @@ app = FastAPI(
 )
 
 # CORS configuration
-cors_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173")
-origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+origins = config.CORS_ORIGINS
 
 app.add_middleware(
     CORSMiddleware,
