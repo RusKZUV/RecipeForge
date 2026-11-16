@@ -42,7 +42,7 @@ services:
       APP_ENV: ${APP_ENV:-development}
       DEBUG: ${DEBUG:-true}
       PORT: 8091
-      DATABASE_URL: ${DATABASE_URL:-postgresql://recipeforge_dev_user:recipeforge_dev_password@db-dev:5432/recipeforge_dev_db}
+      DATABASE_URL: ${DEV_CONTAINER_DATABASE_URL:-postgresql://${POSTGRES_USER:-recipeforge_dev_user}:${POSTGRES_PASSWORD:-recipeforge_dev_password}@db-dev:5432/${POSTGRES_DB:-recipeforge_dev_db}}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://localhost:8091}
       JWT_SECRET: ${JWT_SECRET:-dev-insecure-secret-key-recipeforge-local-only}
     volumes:
