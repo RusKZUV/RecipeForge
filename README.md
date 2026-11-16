@@ -200,9 +200,13 @@ npm test
 
 ---
 
-## 🚀 CI/CD & Production Deployment
+## CI/CD
 
 RecipeForge includes automated continuous integration and a manual, gated production deployment pipeline using GitHub Actions.
+
+> [!NOTE]
+> Для активации подтверждения (approval) нужно зайти в **Settings -> Environments -> production -> добавить Required reviewers**.  
+> *(To activate manual approval before deployment, navigate to **Settings -> Environments -> production -> add Required reviewers**).*
 
 ### 1. Manual Production Deployment Workflow (`deploy-prod.yml`)
 
@@ -218,11 +222,13 @@ To enforce mandatory human review and approval before any production deployment 
 
 1. In your GitHub repository, navigate to the **Settings** tab.
 2. In the left navigation sidebar, select **Environments** (under *Code and automation*).
-3. Click **New environment**, name it `production`, and click **Configure environment**.
+3. Click **New environment**, name it `production`, and click **Configure environment** (or select existing `production`).
 4. Under **Deployment protection rules**, enable the **Required reviewers** checkbox.
 5. Search for and select the GitHub usernames or teams authorized to approve production releases.
 6. *(Optional)* Under **Deployment branches**, select **Selected branches** and add `main` to prevent deployments from experimental branches.
 7. Click **Save protection rules**.
+
+> **Итог**: Для активации подтверждения (approval) нужно зайти в **Settings -> Environments -> production -> добавить Required reviewers**.
 
 ### 3. How to Run the Production Deployment Manually
 
